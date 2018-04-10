@@ -1,5 +1,5 @@
 'use strict';
-const composePixelCount = 4096;
+const composePixelCount = 960;
 const masterPixelCount = 30 * 5;
 function Logic(sio) {
   const that = this;
