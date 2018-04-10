@@ -16,12 +16,12 @@ class Premulator extends EventEmitter {
     this._options = Object.assign({
       composePixelCount: 150,
       masterPixelCount: 960,
-      particDynasMaxCount: 512,
+      particDynasMaxCount: 1024,
       particFatsMaxCount: 4,
       particHeroesMaxCount: 1,
       beatPerRing: 8,
       bpm: 120,
-      particDynasBoomCount: 128,
+      particDynasBoomCount: 256,
       particDynasBoomVel: 1000,
     }, options);
     this._ring = {
@@ -65,10 +65,10 @@ class Premulator extends EventEmitter {
     this._iter.beatstampPos += 1;
     this._iter.beatstampPos %= 1;
 
-    let turnstampConstantVel = -0.2;
-    let turnstampSineVel = Math.sin((this._iter.beatstampPos) * 8  * Math.PI * 2) * 0.1;
+    let turnstampConstantVel = 0.15;
+    let turnstampBeatSineVel = Math.sin((this._iter.beatstampPos) * 4 * Math.PI * 2) * 0.0;
     
-    this._iter.turnstampVel = turnstampConstantVel + turnstampSineVel;
+    this._iter.turnstampVel = turnstampConstantVel + turnstampBeatSineVel;
     this._iter.turnstampPos += this._iter.dt * this._iter.turnstampVel;
     this._iter.turnstampPos %= 1;
     this._iter.turnstampPos += 1;
