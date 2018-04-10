@@ -1,19 +1,10 @@
 'use strict';
-const composePixelCount = 960;
-const masterPixelCount = 30 * 5;
+const masterPixelCount = 960;
+const composePixelCount = 30 * 5;
 function Logic(sio) {
   const that = this;
   function init() {
     setInterval(() => {
-      let composePixels = new Array(composePixelCount);
-      for (let i = 0; i < composePixelCount; i++) {
-        let rgb = {
-          r: Math.floor(Math.random() * 256),
-          g: Math.floor(Math.random() * 256),
-          b: Math.floor(Math.random() * 256),
-        }
-        composePixels[i] = rgb;
-      }
       let masterPixels = new Array(masterPixelCount);
       for (let i = 0; i < masterPixelCount; i++) {
         let rgb = {
@@ -23,7 +14,16 @@ function Logic(sio) {
         }
         masterPixels[i] = rgb;
       }
-      sio.emit('ledline', masterPixels);
+      let composePixels = new Array(composePixelCount);
+      for (let i = 0; i < composePixelCount; i++) {
+        let rgb = {
+          r: Math.floor(Math.random() * 256),
+          g: Math.floor(Math.random() * 256),
+          b: Math.floor(Math.random() * 256),
+        }
+        composePixels[i] = rgb;
+      }
+      sio.emit('ledline', composePixels);
     }, 500); 
   }
   init();

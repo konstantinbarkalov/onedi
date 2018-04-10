@@ -1,35 +1,35 @@
 'use strict';
-const composePixelCount = 960;
-const masterPixelCount = 30 * 5;
+const masterPixelCount = 960;
+const composePixelCount = 30 * 5;
 const premulator = require('./premulator.js');
 let config = {
   runStampsCount: 100,
 }
 //let sio = io();
-let sio = premulator({composePixelCount:composePixelCount, masterPixelCount:masterPixelCount});
-function Ledsim(sio, $composeCanvas, $masterCanvas, $stat) {
+let sio = premulator({masterPixelCount:masterPixelCount, composePixelCount:composePixelCount});
+function Ledsim(sio, $masterCanvas, $composeCanvas, $stat) {
   const that = this;
-  that._composeCanvasScaledWidth = 0;
-  that._composeCanvasScaledHeight = 0;
-  that._composeCanvas = null;
-  that._composeCtx = null;
   that._masterCanvasScaledWidth = 0;
   that._masterCanvasScaledHeight = 0;
   that._masterCanvas = null;
   that._masterCtx = null;
+  that._composeCanvasScaledWidth = 0;
+  that._composeCanvasScaledHeight = 0;
+  that._composeCanvas = null;
+  that._composeCtx = null;
   
   function init() {
-    sio.on('ledline', (composeData, masterData) => {
-      readLedline(composeData, masterData);
+    sio.on('ledline', (masterData, composeData) => {
+      readLedline(masterData, composeData);
     });
-    that._composeCanvas = $composeCanvas[0];
-    that._composeCtx = that._composeCanvas.getContext('2d');  
-    that._composeCanvas.width = composePixelCount;
-    that._composeCanvas.height = 1;
     that._masterCanvas = $masterCanvas[0];
     that._masterCtx = that._masterCanvas.getContext('2d');  
     that._masterCanvas.width = masterPixelCount;
     that._masterCanvas.height = 1;
+    that._composeCanvas = $composeCanvas[0];
+    that._composeCtx = that._composeCanvas.getContext('2d');  
+    that._composeCanvas.width = composePixelCount;
+    that._composeCanvas.height = 1;
 
     $(window).on('resize', () => {
       updateCanvasScaledSize();
@@ -52,30 +52,19 @@ function Ledsim(sio, $composeCanvas, $masterCanvas, $stat) {
     }
   }
   function updateCanvasScaledSize() {
-    that._composeCanvasScaledWidth = $composeCanvas.width();
-    that._composeCanvasScaledHeight = $composeCanvas.height();
     that._masterCanvasScaledWidth = $masterCanvas.width();
     that._masterCanvasScaledHeight = $masterCanvas.height();
+    that._composeCanvasScaledWidth = $composeCanvas.width();
+    that._composeCanvasScaledHeight = $composeCanvas.height();
   }
 
-  function readLedline(ledlineComposeData, ledlineMasterData) {
-    updateComposeCanvas(ledlineComposeData);
+  function readLedline(ledlineMasterData, ledlineComposeData) {
     updateMasterCanvas(ledlineMasterData);
+    updateComposeCanvas(ledlineComposeData);
     stat();
   }
   function updateStat() {
     $stat.html(`fps: ${that._stat.avgFps.toFixed(1)}</br> total: ${that._stat.count}`);
-  }
-  function updateComposeCanvas(ledlineData) {
-    let imd = that._composeCtx.createImageData(1,1);
-    let d  = imd.data;                       
-    d[3] = 255; //alpha
-    for (let i = 0; i < composePixelCount; i++) {
-      d[0] = ledlineData[i].r;
-      d[1] = ledlineData[i].g;
-      d[2] = ledlineData[i].b;
-      that._composeCtx.putImageData(imd, i, 0 );  
-    }
   }
   function updateMasterCanvas(ledlineData) {
     let imd = that._masterCtx.createImageData(1,1);
@@ -88,11 +77,22 @@ function Ledsim(sio, $composeCanvas, $masterCanvas, $stat) {
       that._masterCtx.putImageData(imd, i, 0 );  
     }
   }
+  function updateComposeCanvas(ledlineData) {
+    let imd = that._composeCtx.createImageData(1,1);
+    let d  = imd.data;                       
+    d[3] = 255; //alpha
+    for (let i = 0; i < composePixelCount; i++) {
+      d[0] = ledlineData[i].r;
+      d[1] = ledlineData[i].g;
+      d[2] = ledlineData[i].b;
+      that._composeCtx.putImageData(imd, i, 0 );  
+    }
+  }
   init();
 }
 
-let $composeCanvas = $('.ledsim-compose-canvas'); 
 let $masterCanvas = $('.ledsim-master-canvas'); 
+let $composeCanvas = $('.ledsim-compose-canvas'); 
 
 let $stat = $('.ledsim-stat');
-let ledsim = new Ledsim(sio, $composeCanvas, $masterCanvas, $stat);
+let ledsim = new Ledsim(sio, $masterCanvas, $composeCanvas, $stat);

@@ -14,8 +14,8 @@ class Premulator extends EventEmitter {
 
   _setup(options) {
     this._options = Object.assign({
-      composePixelCount: 150,
-      masterPixelCount: 960,
+      masterPixelCount: 150,
+      composePixelCount: 960,
       particDynasMaxCount: 1024,
       particFatsMaxCount: 4,
       particHeroesMaxCount: 1,
@@ -26,11 +26,11 @@ class Premulator extends EventEmitter {
     }, options);
     this._ring = {
       g: {
-        compose: new Float32Array(this._options.composePixelCount * 3),
         master: new Float32Array(this._options.masterPixelCount * 3),
+        compose: new Float32Array(this._options.composePixelCount * 3),
       },
       ph: {
-        wind: new Float32Array(this._options.composePixelCount),
+        wind: new Float32Array(this._options.masterPixelCount),
       }
     }
 
@@ -48,7 +48,7 @@ class Premulator extends EventEmitter {
     this._iter.previousExplodeToParticDynasBeatstamp = 0;
     
     this._fillWindRandom();
-    this._fillComposeRandom();
+    this._fillMasterRandom();
     this._fillParticDynasRandom();
     this._fillParticFatsRandom();
     this._fillParticHeroesRandom();
@@ -85,34 +85,34 @@ class Premulator extends EventEmitter {
     this._liveExplodeToParticDynas();
     this._liveParticDynas();
     
-    this._fillComposeBlack();
-    this._drawOnComposeParticDynas();
-    this._drawOnComposeParticFats();
-    this._drawOnComposeParticHeroes();
-    this._composeToMaster();
+    this._fillMasterBlack();
+    this._drawOnMasterParticDynas();
+    this._drawOnMasterParticFats();
+    this._drawOnMasterParticHeroes();
+    this._masterToCompose();
     this._emitPixels();
   }
 
-  _fillComposeRandom() {
-    for (let i = 0; i < this._options.composePixelCount; i++) {
-      this._ring.g.compose[i * 3 + 0] = Math.random();
-      this._ring.g.compose[i * 3 + 1] = Math.random();
-      this._ring.g.compose[i * 3 + 2] = Math.random();
+  _fillMasterRandom() {
+    for (let i = 0; i < this._options.masterPixelCount; i++) {
+      this._ring.g.master[i * 3 + 0] = Math.random();
+      this._ring.g.master[i * 3 + 1] = Math.random();
+      this._ring.g.master[i * 3 + 2] = Math.random();
     }
   }
-  _fillComposeBlack() {
-    for (let i = 0; i < this._options.composePixelCount * 3; i++) {
-      this._ring.g.compose[i] = 0;
+  _fillMasterBlack() {
+    for (let i = 0; i < this._options.masterPixelCount * 3; i++) {
+      this._ring.g.master[i] = 0;
     }
   }
   _dimWind() {
     let dimRatio = Math.pow(0.5, this._iter.dt);
-    for (let i = 0; i < this._options.composePixelCount; i++) {
+    for (let i = 0; i < this._options.masterPixelCount; i++) {
       this._ring.ph.wind[i] *= dimRatio;
     }
   }
   _fillWindRandom() {
-    for (let i = 0; i < this._options.composePixelCount; i++) {
+    for (let i = 0; i < this._options.masterPixelCount; i++) {
       this._ring.ph.wind[i] = (Math.random() - 0.5) * 5000;
     }
   }
@@ -120,7 +120,7 @@ class Premulator extends EventEmitter {
   _fillParticDynasRandom() {
     for (let i = 0; i < this._options.particDynasMaxCount; i++) {
       this._partic.dynas[i * 6 + 0] = Math.floor(Math.random() * 5000);
-      this._partic.dynas[i * 6 + 1] = Math.random() * this._options.composePixelCount;
+      this._partic.dynas[i * 6 + 1] = Math.random() * this._options.masterPixelCount;
       this._partic.dynas[i * 6 + 2] = Math.random() - 0.5;
       this._partic.dynas[i * 6 + 3] = Math.random();
       this._partic.dynas[i * 6 + 4] = Math.random();
@@ -130,7 +130,7 @@ class Premulator extends EventEmitter {
   _fillParticFatsRandom() {
     for (let i = 0; i < this._options.particFatsMaxCount; i++) {
       this._partic.fats[i * 6 + 0] = 0; //TODO drop
-      this._partic.fats[i * 6 + 1] = Math.random() * this._options.composePixelCount;
+      this._partic.fats[i * 6 + 1] = Math.random() * this._options.masterPixelCount;
       this._partic.fats[i * 6 + 2] = (Math.random() - 0.5) * 500;
       this._partic.fats[i * 6 + 3] = Math.random();
       this._partic.fats[i * 6 + 4] = Math.random();
@@ -140,7 +140,7 @@ class Premulator extends EventEmitter {
   _fillParticHeroesRandom() {
     for (let i = 0; i < this._options.particHeroesMaxCount; i++) {
       this._partic.heroes[i * 6 + 0] = 0; //TODO drop
-      this._partic.heroes[i * 6 + 1] = Math.random() * this._options.composePixelCount;
+      this._partic.heroes[i * 6 + 1] = Math.random() * this._options.masterPixelCount;
       this._partic.heroes[i * 6 + 2] = (Math.random() - 0.5) * 500;
       this._partic.heroes[i * 6 + 3] = Math.random();
       this._partic.heroes[i * 6 + 4] = Math.random();
@@ -150,13 +150,13 @@ class Premulator extends EventEmitter {
 
   _liveParticFats() {
     for (let i = 0; i < this._options.particFatsMaxCount; i++) {
-      let vel = this._iter.turnstampVel * this._options.composePixelCount;      
-      let pos = this._iter.turnstampPos * this._options.composePixelCount;
+      let vel = this._iter.turnstampVel * this._options.masterPixelCount;      
+      let pos = this._iter.turnstampPos * this._options.masterPixelCount;
 
-      pos += i / this._options.particFatsMaxCount * this._options.composePixelCount; // shift per beat
-      pos %= this._options.composePixelCount;
-      pos += this._options.composePixelCount;
-      pos %= this._options.composePixelCount;
+      pos += i / this._options.particFatsMaxCount * this._options.masterPixelCount; // shift per beat
+      pos %= this._options.masterPixelCount;
+      pos += this._options.masterPixelCount;
+      pos %= this._options.masterPixelCount;
       
       this._partic.fats[i * 6 + 1] = pos;
       this._partic.fats[i * 6 + 2] = vel;
@@ -164,15 +164,15 @@ class Premulator extends EventEmitter {
   }
   _liveParticHeroes() {
     for (let i = 0; i < this._options.particHeroesMaxCount; i++) {
-      let vel = this._iter.beatstampVel * this._options.composePixelCount;      
-      let pos = this._iter.beatstampPos * this._options.composePixelCount;
+      let vel = this._iter.beatstampVel * this._options.masterPixelCount;      
+      let pos = this._iter.beatstampPos * this._options.masterPixelCount;
 
-      vel += this._iter.turnstampVel * this._options.composePixelCount;      
-      pos += this._iter.turnstampPos * this._options.composePixelCount;
+      vel += this._iter.turnstampVel * this._options.masterPixelCount;      
+      pos += this._iter.turnstampPos * this._options.masterPixelCount;
       
-      pos %= this._options.composePixelCount;
-      pos += this._options.composePixelCount;
-      pos %= this._options.composePixelCount;
+      pos %= this._options.masterPixelCount;
+      pos += this._options.masterPixelCount;
+      pos %= this._options.masterPixelCount;
       
       this._partic.heroes[i * 6 + 1] = pos;
       this._partic.heroes[i * 6 + 2] = vel;
@@ -231,7 +231,7 @@ class Premulator extends EventEmitter {
         vel = vel - (vel - windVel) * windAffectRatio;
         
         pos += (vel * this._iter.dt);
-        pos %= this._options.composePixelCount;
+        pos %= this._options.masterPixelCount;
         
         this._partic.dynas[i * 6 + 0] = ttl;
         this._partic.dynas[i * 6 + 1] = pos;
@@ -247,7 +247,7 @@ class Premulator extends EventEmitter {
     this._partic.dynas[i * 6 + 0] = 1000; // ttl
 
   } 
-  _drawOnComposeParticDynas() {
+  _drawOnMasterParticDynas() {
     for (let i = 0; i < this._options.particDynasMaxCount; i++) {
       //let ttl = this._partic.dynas[i * 6 + 0];
       let pos = this._partic.dynas[i * 6 + 1];
@@ -258,26 +258,26 @@ class Premulator extends EventEmitter {
       let b = this._partic.dynas[i * 6 + 5] * rgbVelMultitlier;
 
       let intPos = Math.floor(pos);
-      this._ring.g.compose[intPos * 3 + 0] += r * 0.25;
-      this._ring.g.compose[intPos * 3 + 1] += g * 0.25;
-      this._ring.g.compose[intPos * 3 + 2] += b * 0.25;
+      this._ring.g.master[intPos * 3 + 0] += r * 0.25;
+      this._ring.g.master[intPos * 3 + 1] += g * 0.25;
+      this._ring.g.master[intPos * 3 + 2] += b * 0.25;
     }
   }
   
-  _drawOnComposeParticFats() {
+  _drawOnMasterParticFats() {
     for (let i = 0; i < this._options.particFatsMaxCount; i++) {
       let pos = this._partic.fats[i * 6 + 1];
       let r = this._partic.fats[i * 6 + 3];
       let g = this._partic.fats[i * 6 + 4];
       let b = this._partic.fats[i * 6 + 5];
 
-      let halfSize = 6; // TODO: composePixelCount changes agnostic
+      let halfSize = 6; // TODO: masterPixelCount changes agnostic
       let intPosFrom = Math.floor(pos - halfSize);
       let intPosTo = Math.floor(pos + halfSize);
       for (let ii = intPosFrom; ii <= intPosTo; ii++) {
-        this._ring.g.compose[ii * 3 + 0] += r * 2.0;
-        this._ring.g.compose[ii * 3 + 1] += g * 2.0;
-        this._ring.g.compose[ii * 3 + 2] += b * 2.0;  
+        this._ring.g.master[ii * 3 + 0] += r * 2.0;
+        this._ring.g.master[ii * 3 + 1] += g * 2.0;
+        this._ring.g.master[ii * 3 + 2] += b * 2.0;  
       }
     }
   }  
@@ -288,7 +288,7 @@ class Premulator extends EventEmitter {
       let vel = this._partic.fats[i * 6 + 2];
 
    
-      let halfSize = 6; // TODO: composePixelCount changes agnostic
+      let halfSize = 6; // TODO: masterPixelCount changes agnostic
       let intPosFrom = Math.floor(pos - halfSize);
       let intPosTo = Math.floor(pos + halfSize);
       for (let ii = intPosFrom; ii <= intPosTo; ii++) {
@@ -297,20 +297,20 @@ class Premulator extends EventEmitter {
     }
   }  
 
-  _drawOnComposeParticHeroes() {
+  _drawOnMasterParticHeroes() {
     for (let i = 0; i < this._options.particHeroesMaxCount; i++) {
       let pos = this._partic.heroes[i * 6 + 1];
       let r = this._partic.heroes[i * 6 + 3];
       let g = this._partic.heroes[i * 6 + 4];
       let b = this._partic.heroes[i * 6 + 5];
 
-      let halfSize = 12; // TODO: composePixelCount changes agnostic
+      let halfSize = 12; // TODO: masterPixelCount changes agnostic
       let intPosFrom = Math.floor(pos - halfSize);
       let intPosTo = Math.floor(pos + halfSize);
       for (let ii = intPosFrom; ii <= intPosTo; ii++) {
-        this._ring.g.compose[ii * 3 + 0] += r * 3.0;
-        this._ring.g.compose[ii * 3 + 1] += g * 3.0;
-        this._ring.g.compose[ii * 3 + 2] += b * 3.0;  
+        this._ring.g.master[ii * 3 + 0] += r * 3.0;
+        this._ring.g.master[ii * 3 + 1] += g * 3.0;
+        this._ring.g.master[ii * 3 + 2] += b * 3.0;  
       }
     }
   }  
@@ -319,7 +319,7 @@ class Premulator extends EventEmitter {
     for (let i = 0; i < this._options.particHeroesMaxCount; i++) {
       let pos = this._partic.heroes[i * 6 + 1];
       let vel = this._partic.heroes[i * 6 + 2];
-      let halfSize = 12; // TODO: composePixelCount changes agnostic
+      let halfSize = 12; // TODO: masterPixelCount changes agnostic
       let intPosFrom = Math.floor(pos - halfSize);
       let intPosTo = Math.floor(pos + halfSize);
       for (let ii = intPosFrom; ii <= intPosTo; ii++) {
@@ -328,41 +328,31 @@ class Premulator extends EventEmitter {
     }
   }  
 
-  _composeToMaster() {
-    for (let i = 0; i < this._options.masterPixelCount; i++) {
-      let rescaleRate = this._options.composePixelCount / this._options.masterPixelCount;
+  _masterToCompose() {
+    for (let i = 0; i < this._options.composePixelCount; i++) {
+      let rescaleRate = this._options.masterPixelCount / this._options.composePixelCount;
 
-      let composePos = i * rescaleRate;
-      let composeHalfSize = rescaleRate; // dat BLURRNESS
-      let intComposePosFrom = Math.floor(composePos - composeHalfSize);
-      let intComposePosTo = Math.floor(composePos + composeHalfSize);
-      this._ring.g.master[i * 3 + 0] = 0;
-      this._ring.g.master[i * 3 + 1] = 0;
-      this._ring.g.master[i * 3 + 2] = 0;
-      for (let ii = intComposePosFrom; ii <= intComposePosTo; ii++) {
-        this._ring.g.master[i * 3 + 0] += this._ring.g.compose[ii * 3 + 0];
-        this._ring.g.master[i * 3 + 1] += this._ring.g.compose[ii * 3 + 1];
-        this._ring.g.master[i * 3 + 2] += this._ring.g.compose[ii * 3 + 2];
+      let masterPos = i * rescaleRate;
+      let masterHalfSize = rescaleRate; // dat BLURRNESS
+      let intMasterPosFrom = Math.floor(masterPos - masterHalfSize);
+      let intMasterPosTo = Math.floor(masterPos + masterHalfSize);
+      this._ring.g.compose[i * 3 + 0] = 0;
+      this._ring.g.compose[i * 3 + 1] = 0;
+      this._ring.g.compose[i * 3 + 2] = 0;
+      for (let ii = intMasterPosFrom; ii <= intMasterPosTo; ii++) {
+        this._ring.g.compose[i * 3 + 0] += this._ring.g.master[ii * 3 + 0];
+        this._ring.g.compose[i * 3 + 1] += this._ring.g.master[ii * 3 + 1];
+        this._ring.g.compose[i * 3 + 2] += this._ring.g.master[ii * 3 + 2];
       }
-      this._ring.g.master[i * 3 + 0] /= composeHalfSize * 2;
-      this._ring.g.master[i * 3 + 1] /= composeHalfSize * 2;
-      this._ring.g.master[i * 3 + 2] /= composeHalfSize * 2;
+      this._ring.g.compose[i * 3 + 0] /= masterHalfSize * 2;
+      this._ring.g.compose[i * 3 + 1] /= masterHalfSize * 2;
+      this._ring.g.compose[i * 3 + 2] /= masterHalfSize * 2;
       
  
     }
   }  
 
   _emitPixels() {
-    let composePixels = new Array(this._options.composePixelCount);
-    for (let i = 0; i < this._options.composePixelCount; i++) {
-      let rgb = {
-        r: Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 0] * 256))),
-        g: Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 1] * 256))),
-        b: Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 2] * 256))),
-      }
-      composePixels[i] = rgb;
-    }
-
     let masterPixels = new Array(this._options.masterPixelCount);
     for (let i = 0; i < this._options.masterPixelCount; i++) {
       let rgb = {
@@ -372,7 +362,17 @@ class Premulator extends EventEmitter {
       }
       masterPixels[i] = rgb;
     }
-    this.emit('ledline', composePixels, masterPixels);
+
+    let composePixels = new Array(this._options.composePixelCount);
+    for (let i = 0; i < this._options.composePixelCount; i++) {
+      let rgb = {
+        r: Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 0] * 256))),
+        g: Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 1] * 256))),
+        b: Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 2] * 256))),
+      }
+      composePixels[i] = rgb;
+    }
+    this.emit('ledline', masterPixels, composePixels);
   }
   ////////
   //////// RREMULATOR END
