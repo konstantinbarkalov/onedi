@@ -65,7 +65,8 @@ class Premulator extends EventEmitter {
     this._iter.beatstampPos += 1;
     this._iter.beatstampPos %= 1;
 
-    let turnstampConstantVel = 0.15;
+    let turnstampConstantVel = -0.15;
+    //let turnstampConstantVel = -0.15 + Math.sin(Date.now()/3000) * 0.5;
     let turnstampBeatSineVel = Math.sin((this._iter.beatstampPos) * 4 * Math.PI * 2) * 0.0;
     
     this._iter.turnstampVel = turnstampConstantVel + turnstampBeatSineVel;
