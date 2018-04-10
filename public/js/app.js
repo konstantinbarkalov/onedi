@@ -6,7 +6,7 @@ let config = {
   runStampsCount: 100,
 }
 //let sio = io();
-let sio = premulator(composePixelCount, masterPixelCount);
+let sio = premulator({composePixelCount:composePixelCount, masterPixelCount:masterPixelCount});
 function Ledsim(sio, $composeCanvas, $masterCanvas, $stat) {
   const that = this;
   that._composeCanvasScaledWidth = 0;
