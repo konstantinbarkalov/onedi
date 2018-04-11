@@ -9,7 +9,7 @@ let config = {
 }
 //let sio = io();
 let sio = premulator({masterPixelCount:masterPixelCount, composePixelCount:composePixelCount});
-function Ledsim(sio, $masterCanvas, $composeCanvas, $windCanvas, $wearCanvas, $stat, $analogA) {
+function Ledsim(sio, $masterCanvas, $composeCanvas, $windCanvas, $wearCanvas, $stat, $analogA, $switchA) {
   const that = this;
   that._masterCanvasScaledWidth = 0;
   that._masterCanvasScaledHeight = 0;
@@ -57,12 +57,55 @@ function Ledsim(sio, $masterCanvas, $composeCanvas, $windCanvas, $wearCanvas, $s
       sio.emit('analogA', $analogA.val());  
     })
     sio.emit('analogA', $analogA.val());
+    $switchA.on('input', () => {
+      sio.emit('switchA', $switchA.val());  
+    })
+    sio.emit('switchA', $switchA.val());
   }
   that._stat = {
     count: 0,
     runStamps: new Array(config.runStampsCount),
+    avgFps: 0,
+    image: {
+      master: null,
+      compose: null,
+      wind: null,
+      wear: null,
+    },
   }
-  function stat() {
+  function stat({master, compose, wind, wear}) {
+    statGenericImage('master', masterPixelCount, master);
+    statGenericImage('compose', composePixelCount, compose);
+    statGenericImage('wind', windPixelCount, wind);
+    statGenericImage('wear', wearPixelCount, wear);
+    statFps();
+    updateStat();
+  }
+  function statGenericImage(statName, pixelCount, renderedData) {
+    let median = {
+      r: 0,
+      g: 0,
+      b: 0,
+      s: 0,
+      a: 0,
+    }
+    for (let i = 0; i < pixelCount; i++) {
+      median.r += renderedData[i].r || 0; //TODO: remove '|| 0' after bad input NAN fix
+      median.g += renderedData[i].g || 0;
+      median.b += renderedData[i].b || 0;
+      median.a += renderedData[i].a || 0;
+    }
+    median.r /= pixelCount;
+    median.g /= pixelCount;
+    median.b /= pixelCount;
+    median.a /= pixelCount;
+    median.s = median.r + median.g + median.b;
+    median.s /= 3;
+    that._stat.image[statName] = {
+      median: median,
+    }
+  }
+  function statFps() {
     that._stat.count++;
     that._stat.runStamps.pop();
     that._stat.runStamps.unshift(Date.now());
@@ -70,7 +113,6 @@ function Ledsim(sio, $masterCanvas, $composeCanvas, $windCanvas, $wearCanvas, $s
     if (filledStampsCount >= 2) {
       let avgDelta = (that._stat.runStamps[0] - that._stat.runStamps[filledStampsCount - 1]) / (filledStampsCount - 1);
       that._stat.avgFps = 1000 / avgDelta;
-      updateStat();
     }
   }
   function updateCanvasScaledSize() {
@@ -85,31 +127,28 @@ function Ledsim(sio, $masterCanvas, $composeCanvas, $windCanvas, $wearCanvas, $s
   }
 
   function onRendered({master, compose, wind, wear}) {
-    updateMasterCanvas(master);
-    updateComposeCanvas(compose);
-    updateWindCanvas(wind);
-    updateWearCanvas(wear);
-    stat();
+    updateGenericCanvas(that._masterCtx, masterPixelCount, master);
+    updateGenericCanvas(that._composeCtx, composePixelCount, compose);
+    updateGenericCanvas(that._windCtx, windPixelCount, wind);
+    updateGenericCanvas(that._wearCtx, wearPixelCount, wear);
+    stat({master, compose, wind, wear});
   }
   function updateStat() {
-    $stat.html(`fps: ${that._stat.avgFps.toFixed(1)}</br> total: ${that._stat.count}`);
+    let html = '';
+    html += `fps: ${that._stat.avgFps.toFixed(1)}</br> `;
+    html += `total: ${that._stat.count}</br> `;
+    html += `master.median: ${that._stat.image.master.median.s.toFixed(1)} (r${that._stat.image.master.median.r.toFixed(1)} g${that._stat.image.master.median.g.toFixed(1)} b${that._stat.image.master.median.b.toFixed(1)})</br> `;
+    html += `compose.median: ${that._stat.image.compose.median.s.toFixed(1)} (r${that._stat.image.compose.median.r.toFixed(1)} g${that._stat.image.compose.median.g.toFixed(1)} b${that._stat.image.compose.median.b.toFixed(1)})</br> `;
+    html += `wind.median: ${that._stat.image.wind.median.s.toFixed(1)} (r${that._stat.image.wind.median.r.toFixed(1)} g${that._stat.image.wind.median.g.toFixed(1)} b${that._stat.image.wind.median.b.toFixed(1)})</br> `;
+    html += `wear.median: ${that._stat.image.wear.median.s.toFixed(1)} (r${that._stat.image.wear.median.r.toFixed(1)} g${that._stat.image.wear.median.g.toFixed(1)} b${that._stat.image.wear.median.b.toFixed(1)})</br> `;
+
+    $stat.html(html);
   }
-  function updateMasterCanvas(renderedData) {
-    updateGenericCanvas(that._masterCtx, masterPixelCount, renderedData);
-  }
-  function updateComposeCanvas(renderedData) {
-    updateGenericCanvas(that._composeCtx, composePixelCount, renderedData);
-  }
-  function updateWindCanvas(renderedData) {
-    updateGenericCanvas(that._windCtx, windPixelCount, renderedData);
-  }
-  function updateWearCanvas(renderedData) {
-    updateGenericCanvas(that._wearCtx, wearPixelCount, renderedData);
-  }
-  function updateGenericCanvas(ctx, pixelcount, renderedData) {
-    let imd = ctx.createImageData(pixelcount, 1);
+  
+  function updateGenericCanvas(ctx, pixelCount, renderedData) {
+    let imd = ctx.createImageData(pixelCount, 1);
     let d  = imd.data;                       
-    for (let i = 0; i < pixelcount; i++) {
+    for (let i = 0; i < pixelCount; i++) {
       d[i * 4 + 0] = renderedData[i].r;
       d[i * 4 + 1] = renderedData[i].g;
       d[i * 4 + 2] = renderedData[i].b;
@@ -125,6 +164,7 @@ let $composeCanvas = $('.ledsim-compose-canvas');
 let $windCanvas = $('.ledsim-wind-canvas'); 
 let $wearCanvas = $('.ledsim-wear-canvas'); 
 let $analogA = $('.ledsim-analog-a'); 
+let $switchA = $('.ledsim-switch-a'); 
 
 let $stat = $('.ledsim-stat');
-let ledsim = new Ledsim(sio, $masterCanvas, $composeCanvas, $windCanvas, $wearCanvas, $stat, $analogA);
+let ledsim = new Ledsim(sio, $masterCanvas, $composeCanvas, $windCanvas, $wearCanvas, $stat, $analogA, $switchA);

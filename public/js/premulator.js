@@ -1,6 +1,6 @@
 'use strict';
 const EventEmitter = require('events').EventEmitter;
-
+const Limiter = require('./limiter.js');
 class Premulator extends EventEmitter {
   ////////
   //////// RREMULATOR
@@ -13,6 +13,10 @@ class Premulator extends EventEmitter {
     this.on('analogA', (analogARatio)=>{
       console.log('analogA!', analogARatio);
       this.input.analogARatio = analogARatio;
+    });
+    this.on('switchA', (switchAState)=>{
+      console.log('switchA!', switchAState);
+      this.input.switchAState = switchAState;
     });  
   }
 
@@ -30,6 +34,7 @@ class Premulator extends EventEmitter {
     }, options);
     this.input = {
       analogARatio: 0.5,
+      switchAState: false,
     };
     this._ring = {
       g: {
@@ -38,7 +43,10 @@ class Premulator extends EventEmitter {
       },
       ph: {
         wind: new Float32Array(this._options.masterPixelCount),
-      }
+      },
+      stat: {
+        wear: new Float32Array(this._options.composePixelCount * 3),
+      },
     }
 
     this._partic = {
@@ -54,8 +62,10 @@ class Premulator extends EventEmitter {
     this._iter.turnstampVel = 0;
     this._iter.previousExplodeToParticDynasBeatstamp = 0;
     
-    this._fillWindRandom();
-    this._fillMasterRandom();
+    this._limiter = new Limiter({pixelCount: this._options.composePixelCount});
+
+    this._fillWindBlack();
+    this._fillMasterBlack();
     this._fillParticDynasRandom();
     this._fillParticFatsRandom();
     this._fillParticHeroesRandom();
@@ -97,9 +107,17 @@ class Premulator extends EventEmitter {
     this._drawOnMasterParticFats();
     this._drawOnMasterParticHeroes();
     this._masterToCompose();
+    //this._fillComposeDebug();
+    this._limiter.process(composePixels, this._iter.dt);
+
+    this._composeToWear();
     this._emitPixels();
   }
-
+  _fillComposeDebug() {
+    for (let i = 0; i < this._options.composePixelCount * 3; i++) {
+      this._ring.g.compose[i] = 0.75;
+    }
+  }
   _fillMasterRandom() {
     for (let i = 0; i < this._options.masterPixelCount; i++) {
       this._ring.g.master[i * 3 + 0] = Math.random();
@@ -112,10 +130,20 @@ class Premulator extends EventEmitter {
       this._ring.g.master[i] = 0;
     }
   }
+  _fillWearBlack() {
+    for (let i = 0; i < this._options.wearPixelCount * 3; i++) {
+      this._ring.stat.wear[i] = 0;
+    }
+  }
   _dimWind() {
     let dimRatio = Math.pow(0.5, this._iter.dt);
     for (let i = 0; i < this._options.masterPixelCount; i++) {
       this._ring.ph.wind[i] *= dimRatio;
+    }
+  }
+  _fillWindBlack() {
+    for (let i = 0; i < this._options.masterPixelCount; i++) {
+      this._ring.g.master[i] = 0;
     }
   }
   _fillWindRandom() {
@@ -364,6 +392,27 @@ class Premulator extends EventEmitter {
       
  
     }
+  }
+  _composeToWear() {
+    
+    let chillingRatio = Math.pow(0.5, this._iter.dt / 10);
+    let gainingRatio = 1 - chillingRatio;
+
+    for (let i = 0; i < this._options.composePixelCount; i++) {
+      this._ring.stat.wear[i * 3 + 0] *= chillingRatio;
+      this._ring.stat.wear[i * 3 + 1] *= chillingRatio;
+      this._ring.stat.wear[i * 3 + 2] *= chillingRatio;
+    
+      let rgb8BitCapped = {
+        r: Math.min(255, Math.max(0, this._ring.g.compose[i * 3 + 0])),
+        g: Math.min(255, Math.max(0, this._ring.g.compose[i * 3 + 1])),
+        b: Math.min(255, Math.max(0, this._ring.g.compose[i * 3 + 2])),
+      }
+
+      this._ring.stat.wear[i * 3 + 0] += gainingRatio * rgb8BitCapped.r;
+      this._ring.stat.wear[i * 3 + 1] += gainingRatio * rgb8BitCapped.g;
+      this._ring.stat.wear[i * 3 + 2] += gainingRatio * rgb8BitCapped.b;
+    }
   }  
 
   _emitPixels() {
@@ -386,7 +435,29 @@ class Premulator extends EventEmitter {
       }
       composePixels[i] = rgb;
     }
-    this.emit('rendered', {master: masterPixels, compose: composePixels, wind: masterPixels, wear: composePixels});
+    
+    let windPixels = new Array(this._options.masterPixelCount);
+    for (let i = 0; i < this._options.masterPixelCount; i++) {
+      let rgb = {
+        r: Math.min(255, Math.max(0, Math.floor(this._ring.ph.wind[i] / 1000 * 256))),
+        g: Math.min(255, Math.max(0, -Math.floor(this._ring.ph.wind[i] / 1000 * 256))),
+        b: Math.min(255, Math.max(0, Math.abs(Math.floor(this._ring.ph.wind[i] / 1000 * 256)))),
+      }
+      windPixels[i] = rgb;
+    }
+    let wearPixels = new Array(this._options.composePixelCount);
+    for (let i = 0; i < this._options.composePixelCount; i++) {
+      let rgb = {
+        r: Math.min(255, Math.max(0, Math.floor(this._ring.stat.wear[i * 3 + 0] * 256))),
+        g: Math.min(255, Math.max(0, Math.floor(this._ring.stat.wear[i * 3 + 1] * 256))),
+        b: Math.min(255, Math.max(0, Math.floor(this._ring.stat.wear[i * 3 + 2] * 256))),
+      }
+      wearPixels[i] = rgb;
+    }
+
+    //this._limiter.process(composePixels, this._iter.dt);
+
+    this.emit('rendered', {master: masterPixels, compose: composePixels, wind: windPixels, wear: wearPixels});
   }
   ////////
   //////// RREMULATOR END
