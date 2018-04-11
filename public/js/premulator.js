@@ -9,7 +9,11 @@ class Premulator extends EventEmitter {
   constructor (options) {
     super();
     this._setup(options);
-    setInterval(() => { this._iteration(); }, 20);  
+    setInterval(() => { this._iteration(); }, 20);
+    this.on('analogA', (analogARatio)=>{
+      console.log('analogA!', analogARatio);
+      this.input.analogARatio = analogARatio;
+    });  
   }
 
   _setup(options) {
@@ -24,6 +28,9 @@ class Premulator extends EventEmitter {
       particDynasBoomCount: 256,
       particDynasBoomVel: 1000,
     }, options);
+    this.input = {
+      analogARatio: 0.5,
+    };
     this._ring = {
       g: {
         master: new Float32Array(this._options.masterPixelCount * 3),
@@ -65,7 +72,7 @@ class Premulator extends EventEmitter {
     this._iter.beatstampPos += 1;
     this._iter.beatstampPos %= 1;
 
-    let turnstampConstantVel = -0.15;
+    let turnstampConstantVel = (this.input.analogARatio - 0.5) * 2;
     //let turnstampConstantVel = -0.15 + Math.sin(Date.now()/3000) * 0.5;
     let turnstampBeatSineVel = Math.sin((this._iter.beatstampPos) * 4 * Math.PI * 2) * 0.0;
     
@@ -150,14 +157,19 @@ class Premulator extends EventEmitter {
 
   _liveParticFats() {
     for (let i = 0; i < this._options.particFatsMaxCount; i++) {
+      let ttl = (this._iter.beatstampPos) - i / this._options.particFatsMaxCount; // shift per beat
+      ttl %= 1;
+      ttl += 1;
+      ttl %= 1;      
       let vel = this._iter.turnstampVel * this._options.masterPixelCount;      
       let pos = this._iter.turnstampPos * this._options.masterPixelCount;
-
+      
       pos += i / this._options.particFatsMaxCount * this._options.masterPixelCount; // shift per beat
       pos %= this._options.masterPixelCount;
       pos += this._options.masterPixelCount;
       pos %= this._options.masterPixelCount;
       
+      this._partic.fats[i * 6 + 0] = ttl;
       this._partic.fats[i * 6 + 1] = pos;
       this._partic.fats[i * 6 + 2] = vel;
     }
@@ -252,26 +264,28 @@ class Premulator extends EventEmitter {
       //let ttl = this._partic.dynas[i * 6 + 0];
       let pos = this._partic.dynas[i * 6 + 1];
       let vel = this._partic.dynas[i * 6 + 2];
-      let rgbVelMultitlier = 1 + Math.abs(vel) / 100;
+      let rgbVelMultitlier = 1;// + Math.abs(vel) / 100;
       let r = this._partic.dynas[i * 6 + 3] * rgbVelMultitlier;
       let g = this._partic.dynas[i * 6 + 4] * rgbVelMultitlier;
       let b = this._partic.dynas[i * 6 + 5] * rgbVelMultitlier;
 
       let intPos = Math.floor(pos);
-      this._ring.g.master[intPos * 3 + 0] += r * 0.25;
-      this._ring.g.master[intPos * 3 + 1] += g * 0.25;
-      this._ring.g.master[intPos * 3 + 2] += b * 0.25;
+      this._ring.g.master[intPos * 3 + 0] += r * 0.5;
+      this._ring.g.master[intPos * 3 + 1] += g * 0.5;
+      this._ring.g.master[intPos * 3 + 2] += b * 0.5;
     }
   }
   
   _drawOnMasterParticFats() {
     for (let i = 0; i < this._options.particFatsMaxCount; i++) {
+      let ttl = this._partic.fats[i * 6 + 0];
       let pos = this._partic.fats[i * 6 + 1];
       let r = this._partic.fats[i * 6 + 3];
       let g = this._partic.fats[i * 6 + 4];
       let b = this._partic.fats[i * 6 + 5];
 
       let halfSize = 6; // TODO: masterPixelCount changes agnostic
+      halfSize *= ttl * 3;
       let intPosFrom = Math.floor(pos - halfSize);
       let intPosTo = Math.floor(pos + halfSize);
       for (let ii = intPosFrom; ii <= intPosTo; ii++) {
@@ -372,7 +386,7 @@ class Premulator extends EventEmitter {
       }
       composePixels[i] = rgb;
     }
-    this.emit('ledline', masterPixels, composePixels);
+    this.emit('rendered', {master: masterPixels, compose: composePixels, wind: masterPixels, wear: composePixels});
   }
   ////////
   //////// RREMULATOR END
