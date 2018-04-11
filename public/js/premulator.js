@@ -17,6 +17,9 @@ class Premulator extends EventEmitter {
     this.on('switchA', (switchAState)=>{
       console.log('switchA!', switchAState);
       this.input.switchAState = switchAState;
+      //  TEMP TWEAK
+      this._limiter.bypass = !this.input.switchAState;
+      // /TEMP TWEAK
     });  
   }
 
@@ -45,7 +48,7 @@ class Premulator extends EventEmitter {
         wind: new Float32Array(this._options.masterPixelCount),
       },
       stat: {
-        wear: new Float32Array(this._options.composePixelCount * 3),
+        ingear: new Float32Array(this._options.composePixelCount * 3),
       },
     }
 
@@ -108,14 +111,14 @@ class Premulator extends EventEmitter {
     this._drawOnMasterParticHeroes();
     this._masterToCompose();
     //this._fillComposeDebug();
-    this._limiter.process(composePixels, this._iter.dt);
-
-    this._composeToWear();
+    
+      
+    this._composeToIngear();
     this._emitPixels();
   }
   _fillComposeDebug() {
     for (let i = 0; i < this._options.composePixelCount * 3; i++) {
-      this._ring.g.compose[i] = 0.75;
+      this._ring.g.compose[i] = 2;
     }
   }
   _fillMasterRandom() {
@@ -130,9 +133,9 @@ class Premulator extends EventEmitter {
       this._ring.g.master[i] = 0;
     }
   }
-  _fillWearBlack() {
-    for (let i = 0; i < this._options.wearPixelCount * 3; i++) {
-      this._ring.stat.wear[i] = 0;
+  _fillIngearBlack() {
+    for (let i = 0; i < this._options.ingearPixelCount * 3; i++) {
+      this._ring.stat.ingear[i] = 0;
     }
   }
   _dimWind() {
@@ -393,15 +396,15 @@ class Premulator extends EventEmitter {
  
     }
   }
-  _composeToWear() {
+  _composeToIngear() {
     
     let chillingRatio = Math.pow(0.5, this._iter.dt / 10);
     let gainingRatio = 1 - chillingRatio;
 
     for (let i = 0; i < this._options.composePixelCount; i++) {
-      this._ring.stat.wear[i * 3 + 0] *= chillingRatio;
-      this._ring.stat.wear[i * 3 + 1] *= chillingRatio;
-      this._ring.stat.wear[i * 3 + 2] *= chillingRatio;
+      this._ring.stat.ingear[i * 3 + 0] *= chillingRatio;
+      this._ring.stat.ingear[i * 3 + 1] *= chillingRatio;
+      this._ring.stat.ingear[i * 3 + 2] *= chillingRatio;
     
       let rgb8BitCapped = {
         r: Math.min(255, Math.max(0, this._ring.g.compose[i * 3 + 0])),
@@ -409,55 +412,53 @@ class Premulator extends EventEmitter {
         b: Math.min(255, Math.max(0, this._ring.g.compose[i * 3 + 2])),
       }
 
-      this._ring.stat.wear[i * 3 + 0] += gainingRatio * rgb8BitCapped.r;
-      this._ring.stat.wear[i * 3 + 1] += gainingRatio * rgb8BitCapped.g;
-      this._ring.stat.wear[i * 3 + 2] += gainingRatio * rgb8BitCapped.b;
+      this._ring.stat.ingear[i * 3 + 0] += gainingRatio * rgb8BitCapped.r;
+      this._ring.stat.ingear[i * 3 + 1] += gainingRatio * rgb8BitCapped.g;
+      this._ring.stat.ingear[i * 3 + 2] += gainingRatio * rgb8BitCapped.b;
     }
   }  
 
   _emitPixels() {
-    let masterPixels = new Array(this._options.masterPixelCount);
+    let masterPixels = new Array(this._options.masterPixelCount * 3);
     for (let i = 0; i < this._options.masterPixelCount; i++) {
-      let rgb = {
-        r: Math.min(255, Math.max(0, Math.floor(this._ring.g.master[i * 3 + 0] * 256))),
-        g: Math.min(255, Math.max(0, Math.floor(this._ring.g.master[i * 3 + 1] * 256))),
-        b: Math.min(255, Math.max(0, Math.floor(this._ring.g.master[i * 3 + 2] * 256))),
-      }
-      masterPixels[i] = rgb;
+      masterPixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._ring.g.master[i * 3 + 0] * 256)));
+      masterPixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._ring.g.master[i * 3 + 1] * 256)));
+      masterPixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._ring.g.master[i * 3 + 2] * 256)));
     }
 
-    let composePixels = new Array(this._options.composePixelCount);
+    let composePixels = new Array(this._options.composePixelCount * 3);
     for (let i = 0; i < this._options.composePixelCount; i++) {
-      let rgb = {
-        r: Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 0] * 256))),
-        g: Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 1] * 256))),
-        b: Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 2] * 256))),
-      }
-      composePixels[i] = rgb;
+      composePixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 0] * 256)));
+      composePixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 1] * 256)));
+      composePixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 2] * 256)));
     }
     
-    let windPixels = new Array(this._options.masterPixelCount);
+    let windPixels = new Array(this._options.masterPixelCount * 3);
     for (let i = 0; i < this._options.masterPixelCount; i++) {
-      let rgb = {
-        r: Math.min(255, Math.max(0, Math.floor(this._ring.ph.wind[i] / 1000 * 256))),
-        g: Math.min(255, Math.max(0, -Math.floor(this._ring.ph.wind[i] / 1000 * 256))),
-        b: Math.min(255, Math.max(0, Math.abs(Math.floor(this._ring.ph.wind[i] / 1000 * 256)))),
-      }
-      windPixels[i] = rgb;
-    }
-    let wearPixels = new Array(this._options.composePixelCount);
-    for (let i = 0; i < this._options.composePixelCount; i++) {
-      let rgb = {
-        r: Math.min(255, Math.max(0, Math.floor(this._ring.stat.wear[i * 3 + 0] * 256))),
-        g: Math.min(255, Math.max(0, Math.floor(this._ring.stat.wear[i * 3 + 1] * 256))),
-        b: Math.min(255, Math.max(0, Math.floor(this._ring.stat.wear[i * 3 + 2] * 256))),
-      }
-      wearPixels[i] = rgb;
+      windPixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(         this._ring.ph.wind[i] / 1000 * 256)));
+      windPixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(     1 - this._ring.ph.wind[i] / 1000  * 256)));
+      windPixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(Math.abs(this._ring.ph.wind[i]) / 1000  * 256)));
     }
 
-    //this._limiter.process(composePixels, this._iter.dt);
+    let ingearPixels = new Array(this._options.composePixelCount * 3);
+    for (let i = 0; i < this._options.composePixelCount; i++) { 
+      ingearPixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._ring.stat.ingear[i * 3 + 0] * 256)));
+      ingearPixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._ring.stat.ingear[i * 3 + 1] * 256)));
+      ingearPixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._ring.stat.ingear[i * 3 + 2] * 256)));
+    }
+    
+    let heatPixels = new Array(this._options.composePixelCount * 3);
+    for (let i = 0; i < this._options.composePixelCount; i++) { 
+      heatPixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._limiter._heatRing[i * 3 + 0] * 256)));
+      heatPixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._limiter._heatRing[i * 3 + 1] * 256)));
+      heatPixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._limiter._heatRing[i * 3 + 2] * 256)));
+    }
+    
+    //  TEMP TWEAK  
+    this._limiter.process(composePixels, this._iter.dt, composePixels, {from: 0, to: 255});
+    //  TEMP TWEAK
 
-    this.emit('rendered', {master: masterPixels, compose: composePixels, wind: windPixels, wear: wearPixels});
+    this.emit('rendered', {master: masterPixels, compose: composePixels, wind: windPixels, ingear: ingearPixels, heat: heatPixels});
   }
   ////////
   //////// RREMULATOR END

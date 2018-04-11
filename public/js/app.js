@@ -2,14 +2,16 @@
 const masterPixelCount = 960;
 const composePixelCount = 30 * 5;
 const windPixelCount = masterPixelCount;
-const wearPixelCount = composePixelCount;
+const ingearPixelCount = composePixelCount;
+const heatPixelCount = composePixelCount;
+
 const premulator = require('./premulator.js');
 let config = {
   runStampsCount: 100,
 }
 //let sio = io();
 let sio = premulator({masterPixelCount:masterPixelCount, composePixelCount:composePixelCount});
-function Ledsim(sio, $masterCanvas, $composeCanvas, $windCanvas, $wearCanvas, $stat, $analogA, $switchA) {
+function Ledsim(sio, $masterCanvas, $composeCanvas, $windCanvas, $ingearCanvas, $heatCanvas, $stat, $analogA, $switchA) {
   const that = this;
   that._masterCanvasScaledWidth = 0;
   that._masterCanvasScaledHeight = 0;
@@ -23,10 +25,10 @@ function Ledsim(sio, $masterCanvas, $composeCanvas, $windCanvas, $wearCanvas, $s
   that._windCanvasScaledHeight = 0;
   that._windCanvas = null;
   that._windCtx = null;
-  that._wearCanvasScaledWidth = 0;
-  that._wearCanvasScaledHeight = 0;
-  that._wearCanvas = null;
-  that._wearCtx = null;
+  that._ingearCanvasScaledWidth = 0;
+  that._ingearCanvasScaledHeight = 0;
+  that._ingearCanvas = null;
+  that._ingearCtx = null;
   
   function init() {
     sio.on('rendered', (datum) => {
@@ -44,10 +46,14 @@ function Ledsim(sio, $masterCanvas, $composeCanvas, $windCanvas, $wearCanvas, $s
     that._windCtx = that._windCanvas.getContext('2d');  
     that._windCanvas.width = windPixelCount;
     that._windCanvas.height = 1;
-    that._wearCanvas = $wearCanvas[0];
-    that._wearCtx = that._wearCanvas.getContext('2d');  
-    that._wearCanvas.width = wearPixelCount;
-    that._wearCanvas.height = 1;
+    that._ingearCanvas = $ingearCanvas[0];
+    that._ingearCtx = that._ingearCanvas.getContext('2d');  
+    that._ingearCanvas.width = ingearPixelCount;
+    that._ingearCanvas.height = 1;
+    that._heatCanvas = $heatCanvas[0];
+    that._heatCtx = that._heatCanvas.getContext('2d');  
+    that._heatCanvas.width = heatPixelCount;
+    that._heatCanvas.height = 1;
 
     $(window).on('resize', () => {
       updateCanvasScaledSize();
@@ -57,10 +63,11 @@ function Ledsim(sio, $masterCanvas, $composeCanvas, $windCanvas, $wearCanvas, $s
       sio.emit('analogA', $analogA.val());  
     })
     sio.emit('analogA', $analogA.val());
-    $switchA.on('input', () => {
-      sio.emit('switchA', $switchA.val());  
+    $switchA.on('change', () => {
+      console.log('hopm');
+      sio.emit('switchA', $switchA.prop('checked'));  
     })
-    sio.emit('switchA', $switchA.val());
+    sio.emit('switchA', $switchA.prop('checked'));
   }
   that._stat = {
     count: 0,
@@ -70,14 +77,16 @@ function Ledsim(sio, $masterCanvas, $composeCanvas, $windCanvas, $wearCanvas, $s
       master: null,
       compose: null,
       wind: null,
-      wear: null,
+      ingear: null,
+      heat: null,
     },
   }
-  function stat({master, compose, wind, wear}) {
+  function stat({master, compose, wind, ingear, heat}) {
     statGenericImage('master', masterPixelCount, master);
     statGenericImage('compose', composePixelCount, compose);
     statGenericImage('wind', windPixelCount, wind);
-    statGenericImage('wear', wearPixelCount, wear);
+    statGenericImage('ingear', ingearPixelCount, ingear);
+    statGenericImage('heat', heatPixelCount, heat);
     statFps();
     updateStat();
   }
@@ -87,18 +96,15 @@ function Ledsim(sio, $masterCanvas, $composeCanvas, $windCanvas, $wearCanvas, $s
       g: 0,
       b: 0,
       s: 0,
-      a: 0,
     }
     for (let i = 0; i < pixelCount; i++) {
-      median.r += renderedData[i].r || 0; //TODO: remove '|| 0' after bad input NAN fix
-      median.g += renderedData[i].g || 0;
-      median.b += renderedData[i].b || 0;
-      median.a += renderedData[i].a || 0;
+      median.r += renderedData[i * 3 + 0] || 0; //TODO: remove '|| 0' after bad input NAN fix
+      median.g += renderedData[i * 3 + 1] || 0;
+      median.b += renderedData[i * 3 + 2] || 0;
     }
     median.r /= pixelCount;
     median.g /= pixelCount;
     median.b /= pixelCount;
-    median.a /= pixelCount;
     median.s = median.r + median.g + median.b;
     median.s /= 3;
     that._stat.image[statName] = {
@@ -122,16 +128,19 @@ function Ledsim(sio, $masterCanvas, $composeCanvas, $windCanvas, $wearCanvas, $s
     that._composeCanvasScaledHeight = $composeCanvas.height();
     that._windCanvasScaledWidth = $windCanvas.width();
     that._windCanvasScaledHeight = $windCanvas.height();
-    that._wearCanvasScaledWidth = $wearCanvas.width();
-    that._wearCanvasScaledHeight = $wearCanvas.height();
+    that._ingearCanvasScaledWidth = $ingearCanvas.width();
+    that._ingearCanvasScaledHeight = $ingearCanvas.height();
+    that._heatCanvasScaledWidth = $heatCanvas.width();
+    that._heatCanvasScaledHeight = $heatCanvas.height();
   }
 
-  function onRendered({master, compose, wind, wear}) {
+  function onRendered({master, compose, wind, ingear, heat}) {
     updateGenericCanvas(that._masterCtx, masterPixelCount, master);
     updateGenericCanvas(that._composeCtx, composePixelCount, compose);
     updateGenericCanvas(that._windCtx, windPixelCount, wind);
-    updateGenericCanvas(that._wearCtx, wearPixelCount, wear);
-    stat({master, compose, wind, wear});
+    updateGenericCanvas(that._ingearCtx, ingearPixelCount, ingear);
+    updateGenericCanvas(that._heatCtx, heatPixelCount, heat);
+    stat({master, compose, wind, ingear, heat});
   }
   function updateStat() {
     let html = '';
@@ -140,7 +149,8 @@ function Ledsim(sio, $masterCanvas, $composeCanvas, $windCanvas, $wearCanvas, $s
     html += `master.median: ${that._stat.image.master.median.s.toFixed(1)} (r${that._stat.image.master.median.r.toFixed(1)} g${that._stat.image.master.median.g.toFixed(1)} b${that._stat.image.master.median.b.toFixed(1)})</br> `;
     html += `compose.median: ${that._stat.image.compose.median.s.toFixed(1)} (r${that._stat.image.compose.median.r.toFixed(1)} g${that._stat.image.compose.median.g.toFixed(1)} b${that._stat.image.compose.median.b.toFixed(1)})</br> `;
     html += `wind.median: ${that._stat.image.wind.median.s.toFixed(1)} (r${that._stat.image.wind.median.r.toFixed(1)} g${that._stat.image.wind.median.g.toFixed(1)} b${that._stat.image.wind.median.b.toFixed(1)})</br> `;
-    html += `wear.median: ${that._stat.image.wear.median.s.toFixed(1)} (r${that._stat.image.wear.median.r.toFixed(1)} g${that._stat.image.wear.median.g.toFixed(1)} b${that._stat.image.wear.median.b.toFixed(1)})</br> `;
+    html += `ingear.median: ${that._stat.image.ingear.median.s.toFixed(1)} (r${that._stat.image.ingear.median.r.toFixed(1)} g${that._stat.image.ingear.median.g.toFixed(1)} b${that._stat.image.ingear.median.b.toFixed(1)})</br> `;
+    html += `heat.median: ${that._stat.image.heat.median.s.toFixed(1)} (r${that._stat.image.heat.median.r.toFixed(1)} g${that._stat.image.heat.median.g.toFixed(1)} b${that._stat.image.heat.median.b.toFixed(1)})</br> `;
 
     $stat.html(html);
   }
@@ -149,9 +159,9 @@ function Ledsim(sio, $masterCanvas, $composeCanvas, $windCanvas, $wearCanvas, $s
     let imd = ctx.createImageData(pixelCount, 1);
     let d  = imd.data;                       
     for (let i = 0; i < pixelCount; i++) {
-      d[i * 4 + 0] = renderedData[i].r;
-      d[i * 4 + 1] = renderedData[i].g;
-      d[i * 4 + 2] = renderedData[i].b;
+      d[i * 4 + 0] = renderedData[i * 3 + 0];
+      d[i * 4 + 1] = renderedData[i * 3 + 1];
+      d[i * 4 + 2] = renderedData[i * 3 + 2];
       d[i * 4 + 3] = 255; //alpha
     }
     ctx.putImageData(imd, 0, 0 );  
@@ -162,9 +172,11 @@ init();
 let $masterCanvas = $('.ledsim-master-canvas'); 
 let $composeCanvas = $('.ledsim-compose-canvas'); 
 let $windCanvas = $('.ledsim-wind-canvas'); 
-let $wearCanvas = $('.ledsim-wear-canvas'); 
+let $ingearCanvas = $('.ledsim-ingear-canvas'); 
+let $heatCanvas = $('.ledsim-heat-canvas'); 
+
 let $analogA = $('.ledsim-analog-a'); 
 let $switchA = $('.ledsim-switch-a'); 
 
 let $stat = $('.ledsim-stat');
-let ledsim = new Ledsim(sio, $masterCanvas, $composeCanvas, $windCanvas, $wearCanvas, $stat, $analogA, $switchA);
+let ledsim = new Ledsim(sio, $masterCanvas, $composeCanvas, $windCanvas, $ingearCanvas, $heatCanvas, $stat, $analogA, $switchA);
