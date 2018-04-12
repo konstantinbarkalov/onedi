@@ -4,11 +4,7 @@ const EventEmitter = require('events').EventEmitter;
 // ES6
 import Limiter from './limiter.js';
 
-class Premulator extends EventEmitter {
-  ////////
-  //////// RREMULATOR
-  //////// to be ported into low-level lib (c or c++)
-  ////////
+class VisualProcessor extends EventEmitter {
   constructor (iobus, options) {
     super();
     this._iobus = iobus;
@@ -501,9 +497,6 @@ class Premulator extends EventEmitter {
 
     this.emit('rendered', {master: masterPixels, compose: composePixels, wind: windPixels, ingear: ingearPixels, heat: heatPixels});
   }
-  ////////
-  //////// RREMULATOR END
-  ////////
 }
 
-module.exports = Premulator;
+module.exports = VisualProcessor;
