@@ -1,0 +1,27 @@
+{
+  "input": {
+    "analogA": {
+      "type": 'analog'
+    },
+    "analogB": {
+      "type": 'analog'
+    },
+    "switchA": {
+      "type": 'switch'
+    },
+    "switchB": {
+      "type": 'switch'
+     }
+  },
+  "output": {
+    "statusledA": {
+      "type": 'statusled'
+    },
+    "statusledB": {
+      "type": 'statusled'
+    },
+    "statusledC": {
+      "type": 'statusled'
+    }
+  }
+}

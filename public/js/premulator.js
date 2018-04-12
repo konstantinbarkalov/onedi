@@ -1,26 +1,19 @@
 'use strict';
 const EventEmitter = require('events').EventEmitter;
-const Limiter = require('./limiter.js');
+
+// ES6
+import Limiter from './limiter.js';
+
 class Premulator extends EventEmitter {
   ////////
   //////// RREMULATOR
   //////// to be ported into low-level lib (c or c++)
   ////////
-  constructor (options) {
+  constructor (iobus, options) {
     super();
+    this._iobus = iobus;
     this._setup(options);
-    setInterval(() => { this._iteration(); }, 20);
-    this.on('analogA', (analogARatio)=>{
-      console.log('analogA!', analogARatio);
-      this.input.analogARatio = analogARatio;
-    });
-    this.on('switchA', (switchAState)=>{
-      console.log('switchA!', switchAState);
-      this.input.switchAState = switchAState;
-      //  TEMP TWEAK
-      this._limiter.bypass = !this.input.switchAState;
-      // /TEMP TWEAK
-    });  
+    setInterval(() => { this._iteration(); }, 50);    
   }
 
   _setup(options) {
@@ -28,11 +21,11 @@ class Premulator extends EventEmitter {
       masterPixelCount: 150,
       composePixelCount: 960,
       particDynasMaxCount: 1024,
-      particFatsMaxCount: 4,
+      particFatsMaxCount: 2,
       particHeroesMaxCount: 1,
-      beatPerRing: 8,
+      beatPerLoop: 8,
       bpm: 120,
-      particDynasBoomCount: 256,
+      particDynasBoomCount: 512,
       particDynasBoomVel: 1000,
     }, options);
     this.input = {
@@ -59,13 +52,36 @@ class Premulator extends EventEmitter {
     }
     this._iter = {
     }
+    
+    this._iter.loopstampPos = 0;
+    this._iter.loopstampVel = 0;
+ 
     this._iter.beatstampPos = 0;
-    this._iter.turnstampPos = 0;
     this._iter.beatstampVel = 0;
+    this._iter.fatHitstampPos = 0;
+    this._iter.fatHitstampVel = 0;
+    this._iter.squeazeBeatstampPos = 0;
+    this._iter.squeazeBeatstampVel = 0;
+    
+
+    this._iter.turnstampPos = 0;
     this._iter.turnstampVel = 0;
-    this._iter.previousExplodeToParticDynasBeatstamp = 0;
+    this._iter.previousExplodeToParticDynasloopstamp = 0;
     
     this._limiter = new Limiter({pixelCount: this._options.composePixelCount});
+
+    this._iobus.on('analogA', (analogARatio)=>{
+      console.log('analogA!', analogARatio);
+      this.input.analogARatio = analogARatio;
+    });
+    
+    this._iobus.on('switchA', (switchAState)=>{
+      console.log('switchA!', switchAState);
+      this.input.switchAState = switchAState;
+      //  TEMP TWEAK
+      this._limiter.bypass = !this.input.switchAState;
+      // /TEMP TWEAK
+    });  
 
     this._fillWindBlack();
     this._fillMasterBlack();
@@ -78,18 +94,38 @@ class Premulator extends EventEmitter {
     //}, 3000);
   }
   _iteration() {
-    this._iter.dt = 20 / 1000;
-    this._iter.beatstampVel = this._options.bpm / 60 / this._options.beatPerRing;
-    this._iter.beatstampPos += this._iter.dt * this._iter.beatstampVel;
-    this._iter.beatstampPos %= 1;
-    this._iter.beatstampPos += 1;
-    this._iter.beatstampPos %= 1;
+    this._iter.dt = 50 / 1000;
+    this._iter.loopstampVel = this._options.bpm / 60 / this._options.beatPerLoop;   
+    this._iter.loopstampPos += this._iter.dt * this._iter.loopstampVel;
+    this._iter.loopstampPos %= 1;
+    this._iter.loopstampPos += 1;
+    this._iter.loopstampPos %= 1;
+    
+    this._iter.beatstampPos = this._iter.loopstampPos * this._options.beatPerLoop % 1;
+    this._iter.beatstampVel = this._iter.loopstampVel * this._options.beatPerLoop;
+    
+    // map linear beatstamp to squeaze ease
+    let x = this._iter.beatstampPos;
+    let a = 2.38;
+    this._iter.squeazeBeatstampPos = Math.pow(x, a);
+    this._iter.squeazeBeatstampVel = a * Math.pow(x, a - 1);
+    this._iter.squeazeBeatstampPos %= 1;
+    this._iter.squeazeBeatstampPos += 1;
+    this._iter.squeazeBeatstampPos %= 1;
+  
+    this._iter.fatHitstampPos = this._iter.loopstampPos * this._options.particFatsMaxCount % 1;
+    this._iter.fatHitstampVel = this._iter.loopstampVel * this._options.particFatsMaxCount;
+
 
     let turnstampConstantVel = (this.input.analogARatio - 0.5) * 2;
     //let turnstampConstantVel = -0.15 + Math.sin(Date.now()/3000) * 0.5;
-    let turnstampBeatSineVel = Math.sin((this._iter.beatstampPos) * 4 * Math.PI * 2) * 0.0;
+    let turnstampBeatSineVel = Math.sin((this._iter.loopstampPos) * 4 * Math.PI * 2) * 0.0;
+  
     
     this._iter.turnstampVel = turnstampConstantVel + turnstampBeatSineVel;
+   
+    //this._iter.turnstampVel += (this._iter.squeazeBeatstampVel - this._iter.beatstampVel) / 12;      
+    
     this._iter.turnstampPos += this._iter.dt * this._iter.turnstampVel;
     this._iter.turnstampPos %= 1;
     this._iter.turnstampPos += 1;
@@ -188,13 +224,13 @@ class Premulator extends EventEmitter {
 
   _liveParticFats() {
     for (let i = 0; i < this._options.particFatsMaxCount; i++) {
-      let ttl = (this._iter.beatstampPos) - i / this._options.particFatsMaxCount; // shift per beat
+      let ttl = (this._iter.loopstampPos) - i / this._options.particFatsMaxCount; // shift per beat
       ttl %= 1;
       ttl += 1;
       ttl %= 1;      
       let vel = this._iter.turnstampVel * this._options.masterPixelCount;      
       let pos = this._iter.turnstampPos * this._options.masterPixelCount;
-      
+       
       pos += i / this._options.particFatsMaxCount * this._options.masterPixelCount; // shift per beat
       pos %= this._options.masterPixelCount;
       pos += this._options.masterPixelCount;
@@ -207,11 +243,16 @@ class Premulator extends EventEmitter {
   }
   _liveParticHeroes() {
     for (let i = 0; i < this._options.particHeroesMaxCount; i++) {
-      let vel = this._iter.beatstampVel * this._options.masterPixelCount;      
-      let pos = this._iter.beatstampPos * this._options.masterPixelCount;
-
+      let vel = this._iter.loopstampVel * this._options.masterPixelCount;      
+      let pos = this._iter.loopstampPos * this._options.masterPixelCount;
+      
+      vel += (this._iter.squeazeBeatstampVel - this._iter.beatstampVel) * this._options.masterPixelCount / 2;      
+      pos += (this._iter.squeazeBeatstampPos - this._iter.beatstampPos) * this._options.masterPixelCount / 2;
+     
       vel += this._iter.turnstampVel * this._options.masterPixelCount;      
       pos += this._iter.turnstampPos * this._options.masterPixelCount;
+
+
       
       pos %= this._options.masterPixelCount;
       pos += this._options.masterPixelCount;
@@ -222,12 +263,12 @@ class Premulator extends EventEmitter {
     }
   }
   _liveExplodeToParticDynas() {
-    let nowFatInt = Math.floor(this._iter.beatstampPos * this._options.particFatsMaxCount);
-    let prevFatInt = Math.floor(this._iter.previousExplodeToParticDynasBeatstamp * this._options.particFatsMaxCount);
+    let nowFatInt = Math.floor(this._iter.loopstampPos * this._options.particFatsMaxCount);
+    let prevFatInt = Math.floor(this._iter.previousExplodeToParticDynasloopstamp * this._options.particFatsMaxCount);
     if (nowFatInt != prevFatInt) {
       this._explodeParticFat(nowFatInt);    
     }
-    this._iter.previousExplodeToParticDynasBeatstamp = this._iter.beatstampPos; 
+    this._iter.previousExplodeToParticDynasloopstamp = this._iter.loopstampPos; 
   }
   
   _explodeParticFat(fatIndex) {
@@ -236,7 +277,7 @@ class Premulator extends EventEmitter {
     let r = this._partic.fats[fatIndex * 6 + 3];
     let g = this._partic.fats[fatIndex * 6 + 4];
     let b = this._partic.fats[fatIndex * 6 + 5];
-    console.log('boom fatIndex', fatIndex, r,g,b);
+    console.log('boom lp, fatIndex, rgb', this._iter.loopstampPos, fatIndex, r,g,b);
     for (let i = 0; i < this._options.particDynasBoomCount; i++) {
       let spawnedparticdynasindex = Math.floor(Math.random() * this._options.particDynasMaxCount)
       // todo: smart grave
@@ -465,7 +506,4 @@ class Premulator extends EventEmitter {
   ////////
 }
 
-function premulatorFactory(...args) {
-  return new Premulator(...args);
-}
-module.exports = premulatorFactory;
+module.exports = Premulator;

@@ -90,4 +90,4 @@ class Limiter {
   ////////
 }
 
-module.exports = Limiter;
+export default Limiter;
