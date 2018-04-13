@@ -9,7 +9,7 @@ class Limiter extends OptionizedCorecofigured {
   }
   static get _defaultRuntimeOptions() {
     return {
-      bypass: 120,
+      bypass: false,
     }
   }
 

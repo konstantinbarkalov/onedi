@@ -26,10 +26,12 @@
         "type": "analog"
       },
       "switchA": {
-        "type": "switch"
+        "type": "switch",
+        "initialValue": 1
       },
       "switchB": {
-        "type": "switch"
+        "type": "switch",
+        "initialValue": 1
        }
     },
     "output": {

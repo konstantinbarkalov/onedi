@@ -6,17 +6,17 @@ import OptionizedCorecofigured from './optionizedCorecofigured.js';
 class VisualProcessor extends OptionizedCorecofigured {
   static get _defaultInitialOptions() {
     return {
-      particDynasMaxCount: 1024,
-      particFatsMaxCount: 2,
+      particDynasMaxCount: 2048,
+      particFatsMaxCount: 4,
       particHeroesMaxCount: 1,
-      beatPerLoop: 8,
+      beatPerLoop: 4,
       particDynasBoomCount: 512,
-      particDynasBoomVel: 1000,
+      particDynasBoomVel: 1500,
     }
   }
   static get _defaultRuntimeOptions() {
     return {
-      bpm: 120,
+      bpm: 60,
     }
   }
 
@@ -30,13 +30,14 @@ class VisualProcessor extends OptionizedCorecofigured {
   constructor (initialOptions, runtimeOptions) {
     super(initialOptions, runtimeOptions);
     this._construct();
-    setInterval(() => { this._iteration(); }, 50);    
+    setInterval(() => { this._iteration(); }, 20);    
   }
   
   _construct() {
     this.input = {
       analogARatio: 0.5,
-      switchAState: false,
+      switchAState: true,
+      switchBState: true,
     };
     this._ring = {
       g: {
@@ -75,6 +76,10 @@ class VisualProcessor extends OptionizedCorecofigured {
       // /TEMP TWEAK
     });  
 
+    this._initialOptions.iobus.on('switchB', (switchBState)=>{
+      console.log('switchB!', switchBState);
+      this.input.switchBState = switchBState;
+    });
     this._reset();
   }
   _reset() {
@@ -106,7 +111,7 @@ class VisualProcessor extends OptionizedCorecofigured {
     this._fillParticHeroesRandom();
   }
   _iteration() {
-    this._iter.dt = 50 / 1000;
+    this._iter.dt = 20 / 1000;
     this._iter.loopstampVel = this._runtimeOptions.bpm / 60 / this._initialOptions.beatPerLoop;   
     this._iter.loopstampPos += this._iter.dt * this._iter.loopstampVel;
     this._iter.loopstampPos %= 1;
@@ -130,7 +135,7 @@ class VisualProcessor extends OptionizedCorecofigured {
 
 
     let turnstampConstantVel = (this.input.analogARatio - 0.5) * 2;
-    //let turnstampConstantVel = -0.15 + Math.sin(Date.now()/3000) * 0.5;
+    turnstampConstantVel += Math.sin(Date.now()/3000) * 0.5;
     let turnstampBeatSineVel = Math.sin((this._iter.loopstampPos) * 4 * Math.PI * 2) * 0.0;
   
     
@@ -278,7 +283,6 @@ class VisualProcessor extends OptionizedCorecofigured {
     }
   }
   _liveExplodeToParticDynas() {
-    console.log('bugme');
     let nowFatInt = Math.floor(this._iter.loopstampPos * this._initialOptions.particFatsMaxCount);
     let prevFatInt = Math.floor(this._iter.previousExplodeToParticDynasloopstamp * this._initialOptions.particFatsMaxCount);
     if (nowFatInt != prevFatInt) {
@@ -450,9 +454,32 @@ class VisualProcessor extends OptionizedCorecofigured {
       this._ring.g.compose[i * 3 + 1] /= masterHalfSize * 2;
       this._ring.g.compose[i * 3 + 2] /= masterHalfSize * 2;
       
-      this._ring.g.compose[i * 3 + 0] = Math.pow(3 * this._ring.g.compose[i * 3 + 0], 3);
-      this._ring.g.compose[i * 3 + 1] = Math.pow(3 * this._ring.g.compose[i * 3 + 1], 3);
-      this._ring.g.compose[i * 3 + 2] = Math.pow(3 * this._ring.g.compose[i * 3 + 2], 3); 
+      //this._ring.g.compose[i * 3 + 0] = Math.pow(10 * this._ring.g.compose[i * 3 + 0], 10);
+      //this._ring.g.compose[i * 3 + 1] = Math.pow(10 * this._ring.g.compose[i * 3 + 1], 10);
+      //this._ring.g.compose[i * 3 + 2] = Math.pow(10 * this._ring.g.compose[i * 3 + 2], 10); 
+      
+      //this._ring.g.compose[i * 3 + 0] = Math.pow(this._ring.g.compose[i * 3 + 0], 3);
+      //this._ring.g.compose[i * 3 + 1] = Math.pow(this._ring.g.compose[i * 3 + 1], 3);
+      //this._ring.g.compose[i * 3 + 2] = Math.pow(this._ring.g.compose[i * 3 + 2], 3); 
+      
+
+
+      //this._ring.g.compose[i * 3 + 0] = Math.log(1 + 100 * this._ring.g.compose[i * 3 + 0]) / 5;
+      //this._ring.g.compose[i * 3 + 1] = Math.log(1 + 100 * this._ring.g.compose[i * 3 + 1]) / 5;
+      //this._ring.g.compose[i * 3 + 2] = Math.log(1 + 100 * this._ring.g.compose[i * 3 + 2]) / 5;
+
+
+      
+      let med = this._ring.g.compose[i * 3 + 0] + this._ring.g.compose[i * 3 + 1] + this._ring.g.compose[i * 3 + 2];
+      med /= 3;
+      if (this.input.switchBState) {     
+        this._ring.g.compose[i * 3 + 0] -= med * 0.75;
+        this._ring.g.compose[i * 3 + 1] -= med * 0.75;
+        this._ring.g.compose[i * 3 + 2] -= med * 0.75;
+        this._ring.g.compose[i * 3 + 0] *= 2;
+        this._ring.g.compose[i * 3 + 1] *= 2;
+        this._ring.g.compose[i * 3 + 2] *= 2;
+      }
     }
   }
   _composeToIngear() {
