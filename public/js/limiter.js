@@ -1,17 +1,29 @@
 'use strict';
+// ES6
+import OptionizedCorecofigured from './optionizedCorecofigured.js';
 
-import Optionized from './optionized.js';
-class Limiter extends Optionized {
-  static get _defaultOptions() {
+class Limiter extends OptionizedCorecofigured {
+  static get _defaultInitialOptions() {
     return {
-      pixelCount: 128,
-      bypass: false,
+    }
+  }
+  static get _defaultRuntimeOptions() {
+    return {
+      bypass: 120,
     }
   }
 
-  constructor (options) {
-    super(options);
-    this._heatRing = new Float32Array(this._options.pixelCount * 3);
+  static _getCoreconfigInitialOptions(coreconfig, composeKey) {
+    return {
+      pixelCount: coreconfig.render.composes[composeKey].pixelCount,
+      heatLimit: coreconfig.render.composes[composeKey].limit.heat,
+      electricLimit: coreconfig.render.composes[composeKey].limit.electric,
+    }
+  }
+  
+  constructor (initialOptions, runtimeOptions) {
+    super(initialOptions, runtimeOptions);
+    this._heatRing = new Float32Array(this._initialOptions.pixelCount * 3);
     this.reset();
   }
 
@@ -19,20 +31,20 @@ class Limiter extends Optionized {
     this._fillHeatBlack();
   }
   get bypass() {
-    return this._options.bypass;
+    return this._runtimeOptions.bypass;
   }
   set bypass(bypass) {
-    this._options.bypass = bypass;
+    this._runtimeOptions.bypass = bypass;
   }
 
   process(pixels, dt, target = pixels, clamp = {from: 0, to: 1}) {
-    if (pixels.length !== this._options.pixelCount * 3) {
-      throw new Error(`Input length: ${pixels.length}, but expect: ${this._options.pixelCount * 3}`);
+    if (pixels.length !== this._initialOptions.pixelCount * 3) {
+      throw new Error(`Input length: ${pixels.length}, but expect: ${this._initialOptions.pixelCount * 3}`);
     }
     if (!(dt > 0)) {
       throw new Error(`Delta time: ${dt}, but expect more than 0`);
     }
-    if (this._options.bypass) {
+    if (this._runtimeOptions.bypass) {
       if (pixels !== target) {
         throw new Error('Cannot work in bypass mode when target and source are not same');
       }
@@ -42,7 +54,7 @@ class Limiter extends Optionized {
     this._calcHeat(pixels, dt, clamp);
   }
   _fillHeatBlack() {
-    for (let i = 0; i < this._options.pixelCount * 3; i++) {
+    for (let i = 0; i < this._initialOptions.pixelCount * 3; i++) {
       this._heatRing[i] = 0;
     }
   }
@@ -50,7 +62,7 @@ class Limiter extends Optionized {
     let chillingRatio = Math.pow(0.5, dt / 10);
     let gainingRatio = 1 - chillingRatio;
     let clampDiff = clamp.to - clamp.from;
-    for (let i = 0; i < this._options.pixelCount; i++) {
+    for (let i = 0; i < this._initialOptions.pixelCount; i++) {
       this._heatRing[i * 3 + 0] *= chillingRatio;
       this._heatRing[i * 3 + 1] *= chillingRatio;
       this._heatRing[i * 3 + 2] *= chillingRatio;
@@ -67,7 +79,7 @@ class Limiter extends Optionized {
   _limit(pixels, target, clamp = {from: 0, to: 1}) {
     let affects = [0, 0, 0];
     let clampDiff = clamp.to - clamp.from;
-    for (let i = 0; i < this._options.pixelCount; i++) {
+    for (let i = 0; i < this._initialOptions.pixelCount; i++) {
       
       affects[0] = Math.max(0, -6 + 12 * this._heatRing[i * 3 + 0]);
       affects[1] = Math.max(0, -6 + 12 * this._heatRing[i * 3 + 1]);

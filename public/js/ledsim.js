@@ -1,6 +1,7 @@
 'use strict';
-const masterPixelCount = 960;
-const composePixelCount = 30 * 5;
+const coreconfig = require('./coreconfig.json');
+const masterPixelCount = coreconfig.render.master.pixelCount;
+const composePixelCount = coreconfig.render.composes.ledlineA.pixelCount;
 const windPixelCount = masterPixelCount;
 const ingearPixelCount = composePixelCount;
 const heatPixelCount = composePixelCount;

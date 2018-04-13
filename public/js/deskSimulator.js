@@ -1,18 +1,27 @@
 'use strict';
-const ioconfig = require('./ioconfig.json');
 // ES6
-import Optionized from './optionized.js';
-class DeskSimulator extends Optionized {
-  static get _defaultOptions() {
+import OptionizedCorecofigured from './optionizedCorecofigured.js';
+
+class DeskSimulator extends OptionizedCorecofigured {
+  static get _defaultInitialOptions() {
     return {
     }
   }
-  constructor (iobus, $container, options) {
-    super(options);
-    this._$container = $container;
-    this._iobus = iobus;
-    this._constructInputFromIoconfig(ioconfig);
-    this._constructOutputFromIoconfig(ioconfig);
+  static get _defaultRuntimeOptions() {
+    return {
+    }
+  }
+
+  static _getCoreconfigInitialOptions(coreconfig, coreconfigKey) {
+    return {
+      ioconfig: coreconfig.io
+    }
+  }
+  
+  constructor (initialOptions, runtimeOptions) {
+    super(initialOptions, runtimeOptions);
+    this._constructInputFromIoconfig();
+    this._constructOutputFromIoconfig();
   }
   
   static get elementBuilderset() {
@@ -54,13 +63,14 @@ class DeskSimulator extends Optionized {
     }
   }
 
-  _constructInputFromIoconfig(ioconfig) {
+  _constructInputFromIoconfig() {
+    let ioconfig = this._initialOptions.ioconfig;
     this._$input = $('<div></div>').addClass('desk-simulator-input');
-    this._$container.append(this._$input);
+    this._initialOptions.$container.append(this._$input);
     Object.keys(ioconfig.input).forEach((inputKey) => {
       let inputIoconfig = ioconfig.input[inputKey];
       let inputCCallback = (value) => {
-        this._iobus.emit(inputKey, value);
+        this._initialOptions.iobus.emit(inputKey, value);
       }
       let elementBuilder = DeskSimulator.elementBuilderset.input[inputIoconfig.type];
       let $element = elementBuilder(inputCCallback);
@@ -68,14 +78,15 @@ class DeskSimulator extends Optionized {
     });
   }
   
-  _constructOutputFromIoconfig(ioconfig) {
+  _constructOutputFromIoconfig() {
+    let ioconfig = this._initialOptions.ioconfig;
     this._$output = $('<div></div>').addClass('desk-simulator-output');
-    this._$container.append(this._$output);
+    this._initialOptions.$container.append(this._$output);
     Object.keys(ioconfig.output).forEach((outputKey) => {
       let outputIoconfig = ioconfig.output[outputKey];
       let elementBuilder = DeskSimulator.elementBuilderset.output[outputIoconfig.type];
       let {$element, outputCallback} = elementBuilder(outputCallback);
-      this._iobus.on(outputKey, (value) => {
+      this._initialOptions.iobus.on(outputKey, (value) => {
         outputCallback(value);
       });
       this._$output.append($element);

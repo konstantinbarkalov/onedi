@@ -1,58 +1,88 @@
 'use strict';
 // ES6
 import Limiter from './limiter.js';
-// ES6
-import Optionized from './optionized.js';
-class VisualProcessor extends Optionized {
-  static get _defaultOptions() {
+import OptionizedCorecofigured from './optionizedCorecofigured.js';
+
+class VisualProcessor extends OptionizedCorecofigured {
+  static get _defaultInitialOptions() {
     return {
-      masterPixelCount: 150,
-      composePixelCount: 960,
       particDynasMaxCount: 1024,
       particFatsMaxCount: 2,
       particHeroesMaxCount: 1,
       beatPerLoop: 8,
-      bpm: 120,
       particDynasBoomCount: 512,
       particDynasBoomVel: 1000,
     }
   }
-
-
-  constructor (databus, iobus, options) {
-    super(options);
-    this._iobus = iobus;
-    this._databus = databus;
-    this._setup();
-    setInterval(() => { this._iteration(); }, 50);    
+  static get _defaultRuntimeOptions() {
+    return {
+      bpm: 120,
+    }
   }
 
-  _setup() {
+  static _getCoreconfigInitialOptions(coreconfig, coreconfigKey) {
+    return {
+      masterPixelCount: coreconfig.render.master.pixelCount,
+      composePixelCount: coreconfig.render.composes[coreconfigKey].pixelCount,
+    }
+  }
+  
+  constructor (initialOptions, runtimeOptions) {
+    super(initialOptions, runtimeOptions);
+    this._construct();
+    setInterval(() => { this._iteration(); }, 50);    
+  }
+  
+  _construct() {
     this.input = {
       analogARatio: 0.5,
       switchAState: false,
     };
     this._ring = {
       g: {
-        master: new Float32Array(this._options.masterPixelCount * 3),
-        compose: new Float32Array(this._options.composePixelCount * 3),
+        master: new Float32Array(this._initialOptions.masterPixelCount * 3),
+        compose: new Float32Array(this._initialOptions.composePixelCount * 3),
       },
       ph: {
-        wind: new Float32Array(this._options.masterPixelCount),
+        wind: new Float32Array(this._initialOptions.masterPixelCount),
       },
       stat: {
-        ingear: new Float32Array(this._options.composePixelCount * 3),
+        ingear: new Float32Array(this._initialOptions.composePixelCount * 3),
       },
     }
 
     this._partic = {
-      dynas: new Float32Array(this._options.particDynasMaxCount * 6),
-      fats: new Float32Array(this._options.particFatsMaxCount * 6),
-      heroes: new Float32Array(this._options.particHeroesMaxCount * 6),
+      dynas: new Float32Array(this._initialOptions.particDynasMaxCount * 6),
+      fats: new Float32Array(this._initialOptions.particFatsMaxCount * 6),
+      heroes: new Float32Array(this._initialOptions.particHeroesMaxCount * 6),
     }
     this._iter = {
+      // keys and zero values will be filled in _resetIter() via _reset()
     }
     
+    this._limiter = new Limiter({coreconfigKey: this._initialOptions.coreconfigKey});
+
+    this._initialOptions.iobus.on('analogA', (analogARatio)=>{
+      console.log('analogA!', analogARatio);
+      this.input.analogARatio = analogARatio;
+    });
+    
+    this._initialOptions.iobus.on('switchA', (switchAState)=>{
+      console.log('switchA!', switchAState);
+      this.input.switchAState = switchAState;
+      //  TEMP TWEAK
+      this._limiter.bypass = !this.input.switchAState;
+      // /TEMP TWEAK
+    });  
+
+    this._reset();
+  }
+  _reset() {
+    this._resetIter();
+    this._resetFill();
+    // this._limiter.reset(); // uncomment if need
+  }
+  _resetIter(){
     this._iter.loopstampPos = 0;
     this._iter.loopstampVel = 0;
  
@@ -67,42 +97,24 @@ class VisualProcessor extends Optionized {
     this._iter.turnstampPos = 0;
     this._iter.turnstampVel = 0;
     this._iter.previousExplodeToParticDynasloopstamp = 0;
-    
-    this._limiter = new Limiter({pixelCount: this._options.composePixelCount});
-
-    this._iobus.on('analogA', (analogARatio)=>{
-      console.log('analogA!', analogARatio);
-      this.input.analogARatio = analogARatio;
-    });
-    
-    this._iobus.on('switchA', (switchAState)=>{
-      console.log('switchA!', switchAState);
-      this.input.switchAState = switchAState;
-      //  TEMP TWEAK
-      this._limiter.bypass = !this.input.switchAState;
-      // /TEMP TWEAK
-    });  
-
+  }
+  _resetFill() {
     this._fillWindBlack();
     this._fillMasterBlack();
     this._fillParticDynasRandom();
     this._fillParticFatsRandom();
     this._fillParticHeroesRandom();
-
-    //setInterval(()=>{
-    //  this._fillWindRandom();
-    //}, 3000);
   }
   _iteration() {
     this._iter.dt = 50 / 1000;
-    this._iter.loopstampVel = this._options.bpm / 60 / this._options.beatPerLoop;   
+    this._iter.loopstampVel = this._runtimeOptions.bpm / 60 / this._initialOptions.beatPerLoop;   
     this._iter.loopstampPos += this._iter.dt * this._iter.loopstampVel;
     this._iter.loopstampPos %= 1;
     this._iter.loopstampPos += 1;
     this._iter.loopstampPos %= 1;
     
-    this._iter.beatstampPos = this._iter.loopstampPos * this._options.beatPerLoop % 1;
-    this._iter.beatstampVel = this._iter.loopstampVel * this._options.beatPerLoop;
+    this._iter.beatstampPos = this._iter.loopstampPos * this._initialOptions.beatPerLoop % 1;
+    this._iter.beatstampVel = this._iter.loopstampVel * this._initialOptions.beatPerLoop;
     
     // map linear beatstamp to squeaze ease
     let x = this._iter.beatstampPos;
@@ -113,8 +125,8 @@ class VisualProcessor extends Optionized {
     this._iter.squeazeBeatstampPos += 1;
     this._iter.squeazeBeatstampPos %= 1;
   
-    this._iter.fatHitstampPos = this._iter.loopstampPos * this._options.particFatsMaxCount % 1;
-    this._iter.fatHitstampVel = this._iter.loopstampVel * this._options.particFatsMaxCount;
+    this._iter.fatHitstampPos = this._iter.loopstampPos * this._initialOptions.particFatsMaxCount % 1;
+    this._iter.fatHitstampVel = this._iter.loopstampVel * this._initialOptions.particFatsMaxCount;
 
 
     let turnstampConstantVel = (this.input.analogARatio - 0.5) * 2;
@@ -143,8 +155,11 @@ class VisualProcessor extends Optionized {
     
     this._fillMasterBlack();
     this._drawOnMasterParticDynas();
+    
     this._drawOnMasterParticFats();
     this._drawOnMasterParticHeroes();
+    //this._fillMasterRandom();
+
     this._masterToCompose();
     //this._fillComposeDebug();
     
@@ -153,48 +168,48 @@ class VisualProcessor extends Optionized {
     this._emitPixels();
   }
   _fillComposeDebug() {
-    for (let i = 0; i < this._options.composePixelCount * 3; i++) {
+    for (let i = 0; i < this._initialOptions.composePixelCount * 3; i++) {
       this._ring.g.compose[i] = 2;
     }
   }
   _fillMasterRandom() {
-    for (let i = 0; i < this._options.masterPixelCount; i++) {
+    for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
       this._ring.g.master[i * 3 + 0] = Math.random();
       this._ring.g.master[i * 3 + 1] = Math.random();
       this._ring.g.master[i * 3 + 2] = Math.random();
     }
   }
   _fillMasterBlack() {
-    for (let i = 0; i < this._options.masterPixelCount * 3; i++) {
+    for (let i = 0; i < this._initialOptions.masterPixelCount * 3; i++) {
       this._ring.g.master[i] = 0;
     }
   }
   _fillIngearBlack() {
-    for (let i = 0; i < this._options.ingearPixelCount * 3; i++) {
+    for (let i = 0; i < this._initialOptions.ingearPixelCount * 3; i++) {
       this._ring.stat.ingear[i] = 0;
     }
   }
   _dimWind() {
     let dimRatio = Math.pow(0.5, this._iter.dt);
-    for (let i = 0; i < this._options.masterPixelCount; i++) {
+    for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
       this._ring.ph.wind[i] *= dimRatio;
     }
   }
   _fillWindBlack() {
-    for (let i = 0; i < this._options.masterPixelCount; i++) {
+    for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
       this._ring.g.master[i] = 0;
     }
   }
   _fillWindRandom() {
-    for (let i = 0; i < this._options.masterPixelCount; i++) {
+    for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
       this._ring.ph.wind[i] = (Math.random() - 0.5) * 5000;
     }
   }
 
   _fillParticDynasRandom() {
-    for (let i = 0; i < this._options.particDynasMaxCount; i++) {
+    for (let i = 0; i < this._initialOptions.particDynasMaxCount; i++) {
       this._partic.dynas[i * 6 + 0] = Math.floor(Math.random() * 5000);
-      this._partic.dynas[i * 6 + 1] = Math.random() * this._options.masterPixelCount;
+      this._partic.dynas[i * 6 + 1] = Math.random() * this._initialOptions.masterPixelCount;
       this._partic.dynas[i * 6 + 2] = Math.random() - 0.5;
       this._partic.dynas[i * 6 + 3] = Math.random();
       this._partic.dynas[i * 6 + 4] = Math.random();
@@ -202,9 +217,9 @@ class VisualProcessor extends Optionized {
     }
   }
   _fillParticFatsRandom() {
-    for (let i = 0; i < this._options.particFatsMaxCount; i++) {
+    for (let i = 0; i < this._initialOptions.particFatsMaxCount; i++) {
       this._partic.fats[i * 6 + 0] = 0; //TODO drop
-      this._partic.fats[i * 6 + 1] = Math.random() * this._options.masterPixelCount;
+      this._partic.fats[i * 6 + 1] = Math.random() * this._initialOptions.masterPixelCount;
       this._partic.fats[i * 6 + 2] = (Math.random() - 0.5) * 500;
       this._partic.fats[i * 6 + 3] = Math.random();
       this._partic.fats[i * 6 + 4] = Math.random();
@@ -212,9 +227,9 @@ class VisualProcessor extends Optionized {
     }
   }
   _fillParticHeroesRandom() {
-    for (let i = 0; i < this._options.particHeroesMaxCount; i++) {
+    for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
       this._partic.heroes[i * 6 + 0] = 0; //TODO drop
-      this._partic.heroes[i * 6 + 1] = Math.random() * this._options.masterPixelCount;
+      this._partic.heroes[i * 6 + 1] = Math.random() * this._initialOptions.masterPixelCount;
       this._partic.heroes[i * 6 + 2] = (Math.random() - 0.5) * 500;
       this._partic.heroes[i * 6 + 3] = Math.random();
       this._partic.heroes[i * 6 + 4] = Math.random();
@@ -223,18 +238,18 @@ class VisualProcessor extends Optionized {
   }
 
   _liveParticFats() {
-    for (let i = 0; i < this._options.particFatsMaxCount; i++) {
-      let ttl = (this._iter.loopstampPos) - i / this._options.particFatsMaxCount; // shift per beat
+    for (let i = 0; i < this._initialOptions.particFatsMaxCount; i++) {
+      let ttl = (this._iter.loopstampPos) - i / this._initialOptions.particFatsMaxCount; // shift per beat
       ttl %= 1;
       ttl += 1;
       ttl %= 1;      
-      let vel = this._iter.turnstampVel * this._options.masterPixelCount;      
-      let pos = this._iter.turnstampPos * this._options.masterPixelCount;
+      let vel = this._iter.turnstampVel * this._initialOptions.masterPixelCount;      
+      let pos = this._iter.turnstampPos * this._initialOptions.masterPixelCount;
        
-      pos += i / this._options.particFatsMaxCount * this._options.masterPixelCount; // shift per beat
-      pos %= this._options.masterPixelCount;
-      pos += this._options.masterPixelCount;
-      pos %= this._options.masterPixelCount;
+      pos += i / this._initialOptions.particFatsMaxCount * this._initialOptions.masterPixelCount; // shift per beat
+      pos %= this._initialOptions.masterPixelCount;
+      pos += this._initialOptions.masterPixelCount;
+      pos %= this._initialOptions.masterPixelCount;
       
       this._partic.fats[i * 6 + 0] = ttl;
       this._partic.fats[i * 6 + 1] = pos;
@@ -242,29 +257,30 @@ class VisualProcessor extends Optionized {
     }
   }
   _liveParticHeroes() {
-    for (let i = 0; i < this._options.particHeroesMaxCount; i++) {
-      let vel = this._iter.loopstampVel * this._options.masterPixelCount;      
-      let pos = this._iter.loopstampPos * this._options.masterPixelCount;
+    for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
+      let vel = this._iter.loopstampVel * this._initialOptions.masterPixelCount;      
+      let pos = this._iter.loopstampPos * this._initialOptions.masterPixelCount;
       
-      vel += (this._iter.squeazeBeatstampVel - this._iter.beatstampVel) * this._options.masterPixelCount / 2;      
-      pos += (this._iter.squeazeBeatstampPos - this._iter.beatstampPos) * this._options.masterPixelCount / 2;
+      vel += (this._iter.squeazeBeatstampVel - this._iter.beatstampVel) * this._initialOptions.masterPixelCount / 2;      
+      pos += (this._iter.squeazeBeatstampPos - this._iter.beatstampPos) * this._initialOptions.masterPixelCount / 2;
      
-      vel += this._iter.turnstampVel * this._options.masterPixelCount;      
-      pos += this._iter.turnstampPos * this._options.masterPixelCount;
+      vel += this._iter.turnstampVel * this._initialOptions.masterPixelCount;      
+      pos += this._iter.turnstampPos * this._initialOptions.masterPixelCount;
 
 
       
-      pos %= this._options.masterPixelCount;
-      pos += this._options.masterPixelCount;
-      pos %= this._options.masterPixelCount;
+      pos %= this._initialOptions.masterPixelCount;
+      pos += this._initialOptions.masterPixelCount;
+      pos %= this._initialOptions.masterPixelCount;
       
       this._partic.heroes[i * 6 + 1] = pos;
       this._partic.heroes[i * 6 + 2] = vel;
     }
   }
   _liveExplodeToParticDynas() {
-    let nowFatInt = Math.floor(this._iter.loopstampPos * this._options.particFatsMaxCount);
-    let prevFatInt = Math.floor(this._iter.previousExplodeToParticDynasloopstamp * this._options.particFatsMaxCount);
+    console.log('bugme');
+    let nowFatInt = Math.floor(this._iter.loopstampPos * this._initialOptions.particFatsMaxCount);
+    let prevFatInt = Math.floor(this._iter.previousExplodeToParticDynasloopstamp * this._initialOptions.particFatsMaxCount);
     if (nowFatInt != prevFatInt) {
       this._explodeParticFat(nowFatInt);    
     }
@@ -278,11 +294,11 @@ class VisualProcessor extends Optionized {
     let g = this._partic.fats[fatIndex * 6 + 4];
     let b = this._partic.fats[fatIndex * 6 + 5];
     console.log('boom lp, fatIndex, rgb', this._iter.loopstampPos, fatIndex, r,g,b);
-    for (let i = 0; i < this._options.particDynasBoomCount; i++) {
-      let spawnedparticdynasindex = Math.floor(Math.random() * this._options.particDynasMaxCount)
+    for (let i = 0; i < this._initialOptions.particDynasBoomCount; i++) {
+      let spawnedparticdynasindex = Math.floor(Math.random() * this._initialOptions.particDynasMaxCount)
       // todo: smart grave
       let dynapos = pos;
-      let dynavel = vel + (Math.random() - 0.5) * this._options.particDynasBoomVel;
+      let dynavel = vel + (Math.random() - 0.5) * this._initialOptions.particDynasBoomVel;
       let dynar = r + (Math.random() - 0.5) * 0.2;
       let dynag = g + (Math.random() - 0.5) * 0.2;
       let dynab = b + (Math.random() - 0.5) * 0.2;
@@ -300,7 +316,7 @@ class VisualProcessor extends Optionized {
     let chillDimRatio = Math.pow(0.5, this._iter.dt);        
     chillDimRatio = 1;
     let windAffectRatio = 1 - Math.pow(0.25, this._iter.dt);        
-    for (let i = 0; i < this._options.particDynasMaxCount; i++) {
+    for (let i = 0; i < this._initialOptions.particDynasMaxCount; i++) {
       let ttl = this._partic.dynas[i * 6 + 0];
       if (ttl > 0) {
         ttl--;
@@ -315,7 +331,7 @@ class VisualProcessor extends Optionized {
         vel = vel - (vel - windVel) * windAffectRatio;
         
         pos += (vel * this._iter.dt);
-        pos %= this._options.masterPixelCount;
+        pos %= this._initialOptions.masterPixelCount;
         
         this._partic.dynas[i * 6 + 0] = ttl;
         this._partic.dynas[i * 6 + 1] = pos;
@@ -332,7 +348,7 @@ class VisualProcessor extends Optionized {
 
   } 
   _drawOnMasterParticDynas() {
-    for (let i = 0; i < this._options.particDynasMaxCount; i++) {
+    for (let i = 0; i < this._initialOptions.particDynasMaxCount; i++) {
       //let ttl = this._partic.dynas[i * 6 + 0];
       let pos = this._partic.dynas[i * 6 + 1];
       let vel = this._partic.dynas[i * 6 + 2];
@@ -349,7 +365,7 @@ class VisualProcessor extends Optionized {
   }
   
   _drawOnMasterParticFats() {
-    for (let i = 0; i < this._options.particFatsMaxCount; i++) {
+    for (let i = 0; i < this._initialOptions.particFatsMaxCount; i++) {
       let ttl = this._partic.fats[i * 6 + 0];
       let pos = this._partic.fats[i * 6 + 1];
       let r = this._partic.fats[i * 6 + 3];
@@ -369,7 +385,7 @@ class VisualProcessor extends Optionized {
   }  
 
   _drawOnWindParticFats() {
-    for (let i = 0; i < this._options.particFatsMaxCount; i++) {
+    for (let i = 0; i < this._initialOptions.particFatsMaxCount; i++) {
       let pos = this._partic.fats[i * 6 + 1];
       let vel = this._partic.fats[i * 6 + 2];
 
@@ -384,7 +400,7 @@ class VisualProcessor extends Optionized {
   }  
 
   _drawOnMasterParticHeroes() {
-    for (let i = 0; i < this._options.particHeroesMaxCount; i++) {
+    for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
       let pos = this._partic.heroes[i * 6 + 1];
       let r = this._partic.heroes[i * 6 + 3];
       let g = this._partic.heroes[i * 6 + 4];
@@ -402,7 +418,7 @@ class VisualProcessor extends Optionized {
   }  
 
   _drawOnWindParticHeroes() {
-    for (let i = 0; i < this._options.particHeroesMaxCount; i++) {
+    for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
       let pos = this._partic.heroes[i * 6 + 1];
       let vel = this._partic.heroes[i * 6 + 2];
       let halfSize = 12; // TODO: masterPixelCount changes agnostic
@@ -415,8 +431,8 @@ class VisualProcessor extends Optionized {
   }  
 
   _masterToCompose() {
-    for (let i = 0; i < this._options.composePixelCount; i++) {
-      let rescaleRate = this._options.masterPixelCount / this._options.composePixelCount;
+    for (let i = 0; i < this._initialOptions.composePixelCount; i++) {
+      let rescaleRate = this._initialOptions.masterPixelCount / this._initialOptions.composePixelCount;
 
       let masterPos = i * rescaleRate;
       let masterHalfSize = rescaleRate; // dat BLURRNESS
@@ -444,7 +460,7 @@ class VisualProcessor extends Optionized {
     let chillingRatio = Math.pow(0.5, this._iter.dt / 10);
     let gainingRatio = 1 - chillingRatio;
 
-    for (let i = 0; i < this._options.composePixelCount; i++) {
+    for (let i = 0; i < this._initialOptions.composePixelCount; i++) {
       this._ring.stat.ingear[i * 3 + 0] *= chillingRatio;
       this._ring.stat.ingear[i * 3 + 1] *= chillingRatio;
       this._ring.stat.ingear[i * 3 + 2] *= chillingRatio;
@@ -462,36 +478,36 @@ class VisualProcessor extends Optionized {
   }  
 
   _emitPixels() {
-    let masterPixels = new Array(this._options.masterPixelCount * 3);
-    for (let i = 0; i < this._options.masterPixelCount; i++) {
+    let masterPixels = new Array(this._initialOptions.masterPixelCount * 3);
+    for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
       masterPixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._ring.g.master[i * 3 + 0] * 256)));
       masterPixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._ring.g.master[i * 3 + 1] * 256)));
       masterPixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._ring.g.master[i * 3 + 2] * 256)));
     }
 
-    let composePixels = new Array(this._options.composePixelCount * 3);
-    for (let i = 0; i < this._options.composePixelCount; i++) {
+    let composePixels = new Array(this._initialOptions.composePixelCount * 3);
+    for (let i = 0; i < this._initialOptions.composePixelCount; i++) {
       composePixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 0] * 256)));
       composePixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 1] * 256)));
       composePixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 2] * 256)));
     }
     
-    let windPixels = new Array(this._options.masterPixelCount * 3);
-    for (let i = 0; i < this._options.masterPixelCount; i++) {
+    let windPixels = new Array(this._initialOptions.masterPixelCount * 3);
+    for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
       windPixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(         this._ring.ph.wind[i] / 1000 * 256)));
       windPixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(     1 - this._ring.ph.wind[i] / 1000  * 256)));
       windPixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(Math.abs(this._ring.ph.wind[i]) / 1000  * 256)));
     }
 
-    let ingearPixels = new Array(this._options.composePixelCount * 3);
-    for (let i = 0; i < this._options.composePixelCount; i++) { 
+    let ingearPixels = new Array(this._initialOptions.composePixelCount * 3);
+    for (let i = 0; i < this._initialOptions.composePixelCount; i++) { 
       ingearPixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._ring.stat.ingear[i * 3 + 0] * 256)));
       ingearPixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._ring.stat.ingear[i * 3 + 1] * 256)));
       ingearPixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._ring.stat.ingear[i * 3 + 2] * 256)));
     }
     
-    let heatPixels = new Array(this._options.composePixelCount * 3);
-    for (let i = 0; i < this._options.composePixelCount; i++) { 
+    let heatPixels = new Array(this._initialOptions.composePixelCount * 3);
+    for (let i = 0; i < this._initialOptions.composePixelCount; i++) { 
       heatPixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._limiter._heatRing[i * 3 + 0] * 256)));
       heatPixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._limiter._heatRing[i * 3 + 1] * 256)));
       heatPixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._limiter._heatRing[i * 3 + 2] * 256)));
@@ -501,7 +517,7 @@ class VisualProcessor extends Optionized {
     this._limiter.process(composePixels, this._iter.dt, composePixels, {from: 0, to: 255});
     //  TEMP TWEAK
 
-    this._databus.emit('rendered', {master: masterPixels, compose: composePixels, wind: windPixels, ingear: ingearPixels, heat: heatPixels});
+    this._initialOptions.databus.emit('rendered', {master: masterPixels, compose: composePixels, wind: windPixels, ingear: ingearPixels, heat: heatPixels});
   }
 }
 

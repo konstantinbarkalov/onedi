@@ -23,7 +23,7 @@ function Logic(sio) {
         }
         composePixels[i] = rgb;
       }
-      sio.emit('ledline', composePixels);
+      sio.emit('rendered', {compose: composePixels});
     }, 500); 
   }
   init();

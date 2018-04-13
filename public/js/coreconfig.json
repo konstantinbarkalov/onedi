@@ -1,0 +1,47 @@
+{
+  "render": {
+    "master": {
+      "metricSize": 5,
+      "pixelCount": 960
+    },  
+    "composes": {
+      "ledlineA": {
+        "pixelCount": 150,
+        "mapping": [0, 1],
+        "gain": 1,
+        "gamma": 1,
+        "limit": {
+          "electric": 0.5,
+          "heat": 0.5
+        }
+      }
+    }
+  },
+  "io": {
+    "input": {
+      "analogA": {
+        "type": "analog"
+      },
+      "analogB": {
+        "type": "analog"
+      },
+      "switchA": {
+        "type": "switch"
+      },
+      "switchB": {
+        "type": "switch"
+       }
+    },
+    "output": {
+      "statusledA": {
+        "type": "statusled"
+      },
+      "statusledB": {
+        "type": "statusled"
+      },
+      "statusledC": {
+        "type": "statusled"
+      }
+    }
+  }
+}

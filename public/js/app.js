@@ -1,6 +1,7 @@
 'use strict';
-const masterPixelCount = 960;
-const composePixelCount = 30 * 5;
+const coreconfig = require('./coreconfig.json');
+const masterPixelCount = coreconfig.render.master.pixelCount;
+const composePixelCount = coreconfig.render.composes.ledlineA.pixelCount;
 const windPixelCount = masterPixelCount;
 const ingearPixelCount = composePixelCount;
 const heatPixelCount = composePixelCount;
@@ -9,7 +10,6 @@ const heatPixelCount = composePixelCount;
 // ES6
 import VisualProcessor from './visualProcessor.js';
 import Ionica from './ionica.js';
-import Datanica from './datanica.js';
 import DeskSimulator from './deskSimulator.js';
 import Ledsim from './ledsim.js';
 import { EventEmitter } from 'events';
@@ -23,10 +23,9 @@ let config = {
 
 let databus = new EventEmitter(); // TODO
 let iobus = new EventEmitter(); // TODO
-//let ionica = new Ionica(iobus);
-//let datanica = new Datanica(databus);
-let deskSimulator = new DeskSimulator(iobus, $('.desk-simulator'));
-let visualProcessor = new VisualProcessor(databus, iobus, {masterPixelCount:masterPixelCount, composePixelCount:composePixelCount});
+//let ionica = new Ionica({iobus: iobus});
+let deskSimulator = new DeskSimulator({iobus: iobus, $container: $('.desk-simulator')});
+let visualProcessor = new VisualProcessor({databus: databus, iobus: iobus, coreconfigKey: 'ledlineA'});
 
 let $masterCanvas = $('.ledsim-master-canvas'); 
 let $composeCanvas = $('.ledsim-compose-canvas'); 

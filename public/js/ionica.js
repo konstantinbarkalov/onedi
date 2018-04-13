@@ -1,20 +1,32 @@
 'use strict';
 const EventEmitter = require('events').EventEmitter;
-const ioconfig = require('./ioconfig.json');
+
 // ES6
-import Optionized from './optionized.js';
-class Ionica extends Optionized {
-  static get _defaultOptions() {
-    return { 
+import OptionizedCorecofigured from './optionizedCorecofigured.js';
+
+class Ionica extends OptionizedCorecofigured {
+  static get _defaultInitialOptions() {
+    return {
     }
   }
-  constructor (iobus, options) {
-    super(options);
-    this.iobus = iobus;
-    this._constructInputFromIoconfig(ioconfig);
-    this._constructOutputFromIoconfig(ioconfig);
+  static get _defaultRuntimeOptions() {
+    return {
+    }
   }
-  _constructInputFromIoconfig(ioconfig) {
+
+  static _getCoreconfigInitialOptions(coreconfig, coreconfigKey) {
+    return {
+      ioconfig: coreconfig.io
+    }
+  }
+  
+  constructor (initialOptions, runtimeOptions) {
+    super(initialOptions, runtimeOptions);
+    this._constructInputFromIoconfig();
+    this._constructOutputFromIoconfig();
+  }
+  _constructInputFromIoconfig() {
+    let ioconfig = this._initialOptions.ioconfig;
     this._input = {};
     Object.keys(ioconfig.input).forEach((inputKey) => {
       let ioconfigForKey = ioconfig.input[inputKey];
@@ -22,13 +34,14 @@ class Ionica extends Optionized {
         value: ioconfigForKey.initialValue,
         ioconfig: ioconfigForKey,
       };
-      this.iobus.on(inputKey, (value) => {
+      this._initialOptions.iobus.on(inputKey, (value) => {
         this._input[inputKey].value = value
       })
     });
   }
   
-  _constructOutputFromIoconfig(ioconfig) {
+  _constructOutputFromIoconfig() {
+    let ioconfig = this._initialOptions.ioconfig;
     this._output = {}; 
     Object.keys(ioconfig.output).forEach((outputKey) => {
       let ioconfigForKey = ioconfig.output[outputKey];
@@ -36,7 +49,7 @@ class Ionica extends Optionized {
         value: ioconfigForKey.initialValue,
         ioconfig: ioconfigForKey,
       };
-      this.iobus.on(outputKey, (value) => {
+      this._initialOptions.iobus.on(outputKey, (value) => {
         this._output[outputKey].value = value
       });
     });
