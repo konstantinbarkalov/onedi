@@ -1,19 +1,11 @@
 'use strict';
-const EventEmitter = require('events').EventEmitter;
-
 // ES6
 import Limiter from './limiter.js';
-
-class VisualProcessor extends EventEmitter {
-  constructor (iobus, options) {
-    super();
-    this._iobus = iobus;
-    this._setup(options);
-    setInterval(() => { this._iteration(); }, 50);    
-  }
-
-  _setup(options) {
-    this._options = Object.assign({
+// ES6
+import Optionized from './optionized.js';
+class VisualProcessor extends Optionized {
+  static get _defaultOptions() {
+    return {
       masterPixelCount: 150,
       composePixelCount: 960,
       particDynasMaxCount: 1024,
@@ -23,7 +15,19 @@ class VisualProcessor extends EventEmitter {
       bpm: 120,
       particDynasBoomCount: 512,
       particDynasBoomVel: 1000,
-    }, options);
+    }
+  }
+
+
+  constructor (databus, iobus, options) {
+    super(options);
+    this._iobus = iobus;
+    this._databus = databus;
+    this._setup();
+    setInterval(() => { this._iteration(); }, 50);    
+  }
+
+  _setup() {
     this.input = {
       analogARatio: 0.5,
       switchAState: false,
@@ -430,7 +434,9 @@ class VisualProcessor extends EventEmitter {
       this._ring.g.compose[i * 3 + 1] /= masterHalfSize * 2;
       this._ring.g.compose[i * 3 + 2] /= masterHalfSize * 2;
       
- 
+      this._ring.g.compose[i * 3 + 0] = Math.pow(3 * this._ring.g.compose[i * 3 + 0], 3);
+      this._ring.g.compose[i * 3 + 1] = Math.pow(3 * this._ring.g.compose[i * 3 + 1], 3);
+      this._ring.g.compose[i * 3 + 2] = Math.pow(3 * this._ring.g.compose[i * 3 + 2], 3); 
     }
   }
   _composeToIngear() {
@@ -495,7 +501,7 @@ class VisualProcessor extends EventEmitter {
     this._limiter.process(composePixels, this._iter.dt, composePixels, {from: 0, to: 255});
     //  TEMP TWEAK
 
-    this.emit('rendered', {master: masterPixels, compose: composePixels, wind: windPixels, ingear: ingearPixels, heat: heatPixels});
+    this._databus.emit('rendered', {master: masterPixels, compose: composePixels, wind: windPixels, ingear: ingearPixels, heat: heatPixels});
   }
 }
 

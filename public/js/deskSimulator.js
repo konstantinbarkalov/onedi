@@ -7,12 +7,12 @@ class DeskSimulator extends Optionized {
     return {
     }
   }
-  constructor ($container, iobus, options) {
+  constructor (iobus, $container, options) {
     super(options);
     this._$container = $container;
     this._iobus = iobus;
-    this._initInputFromIoconfig(ioconfig);
-    this._initOutputFromIoconfig(ioconfig);
+    this._constructInputFromIoconfig(ioconfig);
+    this._constructOutputFromIoconfig(ioconfig);
   }
   
   static get elementBuilderset() {
@@ -54,7 +54,7 @@ class DeskSimulator extends Optionized {
     }
   }
 
-  _initInputFromIoconfig(ioconfig) {
+  _constructInputFromIoconfig(ioconfig) {
     this._$input = $('<div></div>').addClass('desk-simulator-input');
     this._$container.append(this._$input);
     Object.keys(ioconfig.input).forEach((inputKey) => {
@@ -68,7 +68,7 @@ class DeskSimulator extends Optionized {
     });
   }
   
-  _initOutputFromIoconfig(ioconfig) {
+  _constructOutputFromIoconfig(ioconfig) {
     this._$output = $('<div></div>').addClass('desk-simulator-output');
     this._$container.append(this._$output);
     Object.keys(ioconfig.output).forEach((outputKey) => {

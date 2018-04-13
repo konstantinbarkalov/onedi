@@ -1,18 +1,16 @@
 'use strict';
-class Limiter {
-  ////////
-  //////// LIMITER
-  //////// describe me...
-  ////////
-  constructor (options) {
-    this._setup(options);  
-  }
 
-  _setup(options) {
-    this._options = Object.assign({
+import Optionized from './optionized.js';
+class Limiter extends Optionized {
+  static get _defaultOptions() {
+    return {
       pixelCount: 128,
       bypass: false,
-    }, options);
+    }
+  }
+
+  constructor (options) {
+    super(options);
     this._heatRing = new Float32Array(this._options.pixelCount * 3);
     this.reset();
   }
@@ -84,10 +82,6 @@ class Limiter {
       target[i * 3 + 2] = Math.max(clamp.from, target[i * 3 + 2]);
     }
   }
-  
-  ////////
-  //////// LIMITER END
-  ////////
 }
 
 export default Limiter;

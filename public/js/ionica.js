@@ -10,11 +10,11 @@ class Ionica extends Optionized {
   }
   constructor (iobus, options) {
     super(options);
-    this.iobus = new EventEmitter();
-    this._initInputFromIoconfig(ioconfig);
-    this._initOutputFromIoconfig(ioconfig);
+    this.iobus = iobus;
+    this._constructInputFromIoconfig(ioconfig);
+    this._constructOutputFromIoconfig(ioconfig);
   }
-  _initInputFromIoconfig(ioconfig) {
+  _constructInputFromIoconfig(ioconfig) {
     this._input = {};
     Object.keys(ioconfig.input).forEach((inputKey) => {
       let ioconfigForKey = ioconfig.input[inputKey];
@@ -28,7 +28,7 @@ class Ionica extends Optionized {
     });
   }
   
-  _initOutputFromIoconfig(ioconfig) {
+  _constructOutputFromIoconfig(ioconfig) {
     this._output = {}; 
     Object.keys(ioconfig.output).forEach((outputKey) => {
       let ioconfigForKey = ioconfig.output[outputKey];
