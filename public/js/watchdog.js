@@ -60,6 +60,7 @@ class Watchdog extends OptionizedCorecofigured {
       console.warn(error);
     }
   }
+  
   _awaitCallback() {
     this._runtimeOptions.lastTimestamp = Date.now();
   }

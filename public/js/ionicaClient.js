@@ -1,5 +1,4 @@
 'use strict';
-const EventEmitter = require('events').EventEmitter;
 
 // ES6
 import OptionizedCorecofigured from './optionizedCorecofigured.js';

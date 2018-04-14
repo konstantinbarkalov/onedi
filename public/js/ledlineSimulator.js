@@ -10,8 +10,24 @@ let config = {
   runStampsCount: 100,
 }
 
-function Ledsim(databus, $masterCanvas, $composeCanvas, $windCanvas, $ingearCanvas, $heatCanvas, $stat) {
+function LedlineSimulator({databus, $container}) {
   const that = this;
+
+  let $masterCanvas = $('<canvas></canvas>').addClass('ledline-simulator-master-canvas'); 
+  $container.append($masterCanvas);
+  let $composeCanvas = $('<canvas></canvas>').addClass('ledline-simulator-compose-canvas'); 
+  $container.append($composeCanvas);
+  let $windCanvas = $('<canvas></canvas>').addClass('ledline-simulator-wind-canvas'); 
+  $container.append($windCanvas);
+  let $ingearCanvas = $('<canvas></canvas>').addClass('ledline-simulator-ingear-canvas'); 
+  $container.append($ingearCanvas);
+  let $heatCanvas = $('<canvas></canvas>').addClass('ledline-simulator-heat-canvas'); 
+  $container.append($heatCanvas);
+  let $stat = $('<canvas></canvas>').addClass('ledline-simulator-stat');
+  $container.append($stat);
+  
+  
+
   that._masterCanvasScaledWidth = 0;
   that._masterCanvasScaledHeight = 0;
   that._masterCanvas = null;
@@ -158,4 +174,4 @@ function Ledsim(databus, $masterCanvas, $composeCanvas, $windCanvas, $ingearCanv
   }
 init();
 }
-export default Ledsim;
+export default LedlineSimulator;
