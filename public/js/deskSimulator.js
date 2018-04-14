@@ -73,7 +73,7 @@ class DeskSimulator extends OptionizedCorecofigured {
         this._initialOptions.iobus.emit(inputKey, value);
       }
       let elementBuilder = DeskSimulator.elementBuilderset.input[inputIoconfig.type];
-      let $element = elementBuilder(inputCCallback);
+      let $element = elementBuilder(inputCCallback, inputIoconfig.initialValue);
       this._$input.append($element);
     });
   }
@@ -85,7 +85,7 @@ class DeskSimulator extends OptionizedCorecofigured {
     Object.keys(ioconfig.output).forEach((outputKey) => {
       let outputIoconfig = ioconfig.output[outputKey];
       let elementBuilder = DeskSimulator.elementBuilderset.output[outputIoconfig.type];
-      let {$element, outputCallback} = elementBuilder(outputCallback);
+      let {$element, outputCallback} = elementBuilder(outputCallback, outputIoconfig.initialValue);
       this._initialOptions.iobus.on(outputKey, (value) => {
         outputCallback(value);
       });

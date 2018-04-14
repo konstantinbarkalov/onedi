@@ -8,7 +8,7 @@ const heatPixelCount = composePixelCount;
 
 
 // ES6
-import VisualProcessor from './visualProcessor.js';
+import Renderer from './renderer.js';
 import Ionica from './ionica.js';
 import DeskSimulator from './deskSimulator.js';
 import Ledsim from './ledsim.js';
@@ -25,7 +25,7 @@ let databus = new EventEmitter(); // TODO
 let iobus = new EventEmitter(); // TODO
 //let ionica = new Ionica({iobus: iobus});
 let deskSimulator = new DeskSimulator({iobus: iobus, $container: $('.desk-simulator')});
-let visualProcessor = new VisualProcessor({databus: databus, iobus: iobus, coreconfigKey: 'ledlineA'});
+let renderer = new Renderer({databus: databus, iobus: iobus, coreconfigKey: 'ledlineA'});
 
 let $masterCanvas = $('.ledsim-master-canvas'); 
 let $composeCanvas = $('.ledsim-compose-canvas'); 

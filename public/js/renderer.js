@@ -3,20 +3,20 @@
 import Limiter from './limiter.js';
 import OptionizedCorecofigured from './optionizedCorecofigured.js';
 
-class VisualProcessor extends OptionizedCorecofigured {
+class Renderer extends OptionizedCorecofigured {
   static get _defaultInitialOptions() {
     return {
       particDynasMaxCount: 2048,
-      particFatsMaxCount: 4,
+      particFatsMaxCount: 8,
       particHeroesMaxCount: 1,
-      beatPerLoop: 4,
+      beatPerLoop: 8,
       particDynasBoomCount: 512,
       particDynasBoomVel: 1500,
     }
   }
   static get _defaultRuntimeOptions() {
     return {
-      bpm: 60,
+      bpm: 130 / 2,
     }
   }
 
@@ -111,7 +111,10 @@ class VisualProcessor extends OptionizedCorecofigured {
     this._fillParticHeroesRandom();
   }
   _iteration() {
-    this._iter.dt = 20 / 1000;
+    let t = Date.now() / 1000;
+    let dt = t - this._iter.t;
+    this._iter.t = t;
+    this._iter.dt = dt || 50;
     this._iter.loopstampVel = this._runtimeOptions.bpm / 60 / this._initialOptions.beatPerLoop;   
     this._iter.loopstampPos += this._iter.dt * this._iter.loopstampVel;
     this._iter.loopstampPos %= 1;
@@ -135,11 +138,11 @@ class VisualProcessor extends OptionizedCorecofigured {
 
 
     let turnstampConstantVel = (this.input.analogARatio - 0.5) * 2;
-    turnstampConstantVel += Math.sin(Date.now()/3000) * 0.5;
-    let turnstampBeatSineVel = Math.sin((this._iter.loopstampPos) * 4 * Math.PI * 2) * 0.0;
+    let turnstampConstantSineVel = Math.sin(Date.now()/3000) * 0.1;
+    let turnstampBeatSineVel = - this._iter.squeazeBeatstampVel / 8;
   
     
-    this._iter.turnstampVel = turnstampConstantVel + turnstampBeatSineVel;
+    this._iter.turnstampVel = turnstampConstantVel + turnstampConstantSineVel + turnstampBeatSineVel;
    
     //this._iter.turnstampVel += (this._iter.squeazeBeatstampVel - this._iter.beatstampVel) / 12;      
     
@@ -336,6 +339,9 @@ class VisualProcessor extends OptionizedCorecofigured {
         
         pos += (vel * this._iter.dt);
         pos %= this._initialOptions.masterPixelCount;
+        pos += this._initialOptions.masterPixelCount;
+        pos %= this._initialOptions.masterPixelCount;
+
         
         this._partic.dynas[i * 6 + 0] = ttl;
         this._partic.dynas[i * 6 + 1] = pos;
@@ -472,13 +478,20 @@ class VisualProcessor extends OptionizedCorecofigured {
       
       let med = this._ring.g.compose[i * 3 + 0] + this._ring.g.compose[i * 3 + 1] + this._ring.g.compose[i * 3 + 2];
       med /= 3;
+      this._ring.g.compose[i * 3 + 0] -= med * 0.75;
+      this._ring.g.compose[i * 3 + 1] -= med * 0.75;
+      this._ring.g.compose[i * 3 + 2] -= med * 0.75;
+      this._ring.g.compose[i * 3 + 0] *= 2;
+      this._ring.g.compose[i * 3 + 1] *= 2;
+      this._ring.g.compose[i * 3 + 2] *= 2;
+      
+      this._ring.g.compose[i * 3 + 0] = Math.max(0, this._ring.g.compose[i * 3 + 0]);
+      this._ring.g.compose[i * 3 + 1] = Math.max(0, this._ring.g.compose[i * 3 + 1]);
+      this._ring.g.compose[i * 3 + 2] = Math.max(0, this._ring.g.compose[i * 3 + 2]);
       if (this.input.switchBState) {     
-        this._ring.g.compose[i * 3 + 0] -= med * 0.75;
-        this._ring.g.compose[i * 3 + 1] -= med * 0.75;
-        this._ring.g.compose[i * 3 + 2] -= med * 0.75;
-        this._ring.g.compose[i * 3 + 0] *= 2;
-        this._ring.g.compose[i * 3 + 1] *= 2;
-        this._ring.g.compose[i * 3 + 2] *= 2;
+        this._ring.g.compose[i * 3 + 0] = Math.pow(this._ring.g.compose[i * 3 + 0], 0.5);
+        this._ring.g.compose[i * 3 + 1] = Math.pow(this._ring.g.compose[i * 3 + 1], 0.5);
+        this._ring.g.compose[i * 3 + 2] = Math.pow(this._ring.g.compose[i * 3 + 2], 0.5); 
       }
     }
   }
@@ -548,4 +561,4 @@ class VisualProcessor extends OptionizedCorecofigured {
   }
 }
 
-module.exports = VisualProcessor;
+module.exports = Renderer;

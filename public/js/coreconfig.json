@@ -27,11 +27,11 @@
       },
       "switchA": {
         "type": "switch",
-        "initialValue": 1
+        "initialValue": false
       },
       "switchB": {
         "type": "switch",
-        "initialValue": 1
+        "initialValue": true
        }
     },
     "output": {
