@@ -20,29 +20,65 @@
   "io": {
     "input": {
       "analogA": {
-        "type": "analog"
+        "type": "analog",
+        "label": "global rotation",
+        "initialValue": 0.5
       },
       "analogB": {
-        "type": "analog"
+        "type": "analog",
+        "label": "global punchness",
+        "initialValue": 0.5
       },
+      
+      "analogC": {
+        "type": "analog",
+        "label": "hero punchness",
+        "initialValue": 0.5
+      },
+
+      "analogD": {
+        "type": "analog",
+        "label": "punchness curve",
+        "initialValue": 0.5
+      },
+
       "switchA": {
         "type": "switch",
+        "label": "electric protection",
         "initialValue": false
       },
       "switchB": {
         "type": "switch",
+        "label": "heat protection",
+        "initialValue": true
+       },
+       "switchC": {
+        "type": "switch",
+        "label": "overcolor",
+        "initialValue": false,
+        "description": "Instagram-alike color overgain with cost of total dynamic range loss."
+      },
+      "switchD": {
+        "type": "switch",
+        "label": "debug stuff",
         "initialValue": true
        }
     },
     "output": {
       "statusledA": {
-        "type": "statusled"
+        "type": "statusled",
+        "label": "system",
+        "initialValue": false
       },
-      "statusledB": {
-        "type": "statusled"
+      "alertledB": {
+        "type": "alertled",
+        "label": "electric protection",
+        "initialValue": true
       },
-      "statusledC": {
-        "type": "statusled"
+      "alertledC": {
+        "type": "alertled",
+        "label": "heat protection",
+        "initialValue": true
       }
     }
   }

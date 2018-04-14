@@ -9,7 +9,7 @@ const heatPixelCount = composePixelCount;
 
 // ES6
 import Renderer from './renderer.js';
-import Ionica from './ionica.js';
+import IonicaClient from './ionicaClient.js';
 import DeskSimulator from './deskSimulator.js';
 import Ledsim from './ledsim.js';
 import { EventEmitter } from 'events';
@@ -23,7 +23,7 @@ let config = {
 
 let databus = new EventEmitter(); // TODO
 let iobus = new EventEmitter(); // TODO
-//let ionica = new Ionica({iobus: iobus});
+//let ionicaClient = new IonicaClient({iobus: iobus});
 let deskSimulator = new DeskSimulator({iobus: iobus, $container: $('.desk-simulator')});
 let renderer = new Renderer({databus: databus, iobus: iobus, coreconfigKey: 'ledlineA'});
 

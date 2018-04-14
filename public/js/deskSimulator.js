@@ -24,40 +24,67 @@ class DeskSimulator extends OptionizedCorecofigured {
     this._constructOutputFromIoconfig();
   }
   
-  static get elementBuilderset() {
+  static get widgetBuilderset() {
     return {
       input: {
-        analog: (callback, initialValue = 0.5) => {
+        analog: (callback, {initialValue, label}) => {
+          let $widget = $('<div></div').addClass('desk-simulator-widget desk-simulator-widget--analog');
+          let $label = $('<div></div>').text(label).addClass('desk-simulator-widget__label');
           let $element = $('<input></input>').prop('type', 'range')
             .prop('min', 0).prop('max',  1)
             .prop('step', 0.001)
-            .addClass('desk-simulator-analog');
+            .addClass('desk-simulator-widget__analog');
           $element.val(initialValue);
           $element.on('input', ()=>{
             callback($element.val());
           });
-          return $element;
+          $widget.append($element);
+          $widget.append($label);
+          return $widget;
         },
-        switch: (callback, initialValue = true) => {
+        switch: (callback, {initialValue, label}) => {
+          let $widget = $('<div></div').addClass('desk-simulator-widget desk-simulator-widget--switch');
+          let $label = $('<div></div>').text(label).addClass('desk-simulator-widget__label');
           let $element = $('<input></input>').prop('type', 'checkbox')
-            .addClass('desk-simulator-switch');
+            .addClass('desk-simulator-widget__switch');
           $element.prop('checked', initialValue);
           $element.on('change', ()=>{
             callback($element.prop('checked'));
           });
-          return $element;
+          $widget.append($element);
+          $widget.append($label);
+          return $widget;
         } 
       },
       output: {
-        statusled: (initialValue = true) => {
-          let $element = $('<div></div>').addClass('desk-simulator-statusled');
-          let callback = (value) => {
+        statusled: ({initialValue, label}) => {
+          let $widget = $('<div></div').addClass('desk-simulator-widget desk-simulator-widget--statusled');
+          let $label = $('<div></div>').text(label).addClass('desk-simulator-widget__label');
+          let $element = $('<div></div>').addClass('desk-simulator-widget__statusled');
+          let outputCallback = (value) => {
             $element.css({
-              opacity: value,
+              opacity: value || 0,
             });
           }
-          callback(initialValue);
-          return {$element, callback};
+          outputCallback(initialValue);
+          $widget.append($element);
+          $widget.append($label);
+          return {$widget, outputCallback};
+        },
+        alertled: ({initialValue, label}) => {
+          let $widget = $('<div></div').addClass('desk-simulator-widget desk-simulator-widget--alertled');
+          let $label = $('<div></div>').text(label).addClass('desk-simulator-widget__label');
+          let $element = $('<div></div>').addClass('desk-simulator-widget__alertled');
+          let outputCallback = (value) => {
+            $element.css({
+              opacity: value || 0,
+            });
+            console.log('meme');
+          }
+          outputCallback(initialValue);
+          $widget.append($element);
+          $widget.append($label);
+          return {$widget, outputCallback};
         }
       }
     }
@@ -65,31 +92,31 @@ class DeskSimulator extends OptionizedCorecofigured {
 
   _constructInputFromIoconfig() {
     let ioconfig = this._initialOptions.ioconfig;
-    this._$input = $('<div></div>').addClass('desk-simulator-input');
+    this._$input = $('<div></div>').addClass('desk-simulator-widgets desk-simulator-widgets--input');
     this._initialOptions.$container.append(this._$input);
     Object.keys(ioconfig.input).forEach((inputKey) => {
       let inputIoconfig = ioconfig.input[inputKey];
-      let inputCCallback = (value) => {
+      let inputCallback = (value) => {
         this._initialOptions.iobus.emit(inputKey, value);
       }
-      let elementBuilder = DeskSimulator.elementBuilderset.input[inputIoconfig.type];
-      let $element = elementBuilder(inputCCallback, inputIoconfig.initialValue);
-      this._$input.append($element);
+      let widgetBuilder = DeskSimulator.widgetBuilderset.input[inputIoconfig.type];
+      let $widget = widgetBuilder(inputCallback, inputIoconfig);
+      this._$input.append($widget);
     });
   }
   
   _constructOutputFromIoconfig() {
     let ioconfig = this._initialOptions.ioconfig;
-    this._$output = $('<div></div>').addClass('desk-simulator-output');
+    this._$output = $('<div></div>').addClass('desk-simulator-widgets desk-simulator-widgets--output');
     this._initialOptions.$container.append(this._$output);
     Object.keys(ioconfig.output).forEach((outputKey) => {
       let outputIoconfig = ioconfig.output[outputKey];
-      let elementBuilder = DeskSimulator.elementBuilderset.output[outputIoconfig.type];
-      let {$element, outputCallback} = elementBuilder(outputCallback, outputIoconfig.initialValue);
+      let widgetBuilder = DeskSimulator.widgetBuilderset.output[outputIoconfig.type];
+      let {$widget, outputCallback} = widgetBuilder(outputIoconfig);
       this._initialOptions.iobus.on(outputKey, (value) => {
         outputCallback(value);
       });
-      this._$output.append($element);
+      this._$output.append($widget);
     });
   }
 }

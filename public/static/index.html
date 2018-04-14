@@ -8,8 +8,42 @@
   integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60="
   crossorigin="anonymous"></script>
 
+
 <div class="desk-simulator">
-  
+<style> 
+  .desk-simulator-widget {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    margin-bottom: 16px;
+    max-width: 400px;
+    min-width: 100px;
+  }
+  .desk-simulator-widgets {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex-grow: 1;    
+    margin-bottom: 32px;
+  }
+  .desk-simulator-widget__analog {
+    height: 24px;
+  }
+  .desk-simulator-widget__switch {
+    width: 24px;
+    height: 24px;
+  }
+  .desk-simulator-widget__alertled, .desk-simulator-widget__statusled {
+    width: 24px;
+    height: 24px;
+  }
+  .desk-simulator-widget__alertled {
+    background-color: red;
+  }
+  .desk-simulator-widget__statusled {
+    background-color: green;
+  }
+</style>  
 </div>
 <canvas class="ledsim-master-canvas" style="width: 100%; height: 16px;">
 </canvas>
