@@ -8,7 +8,7 @@ class Renderer extends OptionizedCorecofigured {
     return {
       ionica: null,
       particDynasMaxCount: 2048,
-      particFatsMaxCount: 8,
+      particFatsMaxCount: 4,
       particHeroesMaxCount: 1,
       beatPerLoop: 8,
       particDynasBoomCount: 512,
@@ -125,7 +125,7 @@ class Renderer extends OptionizedCorecofigured {
 
     let turnstampConstantVel = (this._input.analogA.value - 0.5) * 2;
     let turnstampConstantSineVel = Math.sin(Date.now()/3000) * 0.1 * 0;
-    let turnstampSqueazeBeatSineVel = - this._iter.squeazeBeatstampVel * (this._input.analogC.value - 0.5);
+    let turnstampSqueazeBeatSineVel = - (this._iter.squeazeBeatstampVel - this._iter.beatstampVel) * (this._input.analogC.value - 0.5);
   
     
     this._iter.turnstampVel = turnstampConstantVel + turnstampConstantSineVel + turnstampSqueazeBeatSineVel;
@@ -141,7 +141,7 @@ class Renderer extends OptionizedCorecofigured {
     this._updateIterTime();
     this._liveIterStamp();
    
-    this._dimWind();
+    this._dimAndPumpWind();
     this._liveParticFats();
     this._drawOnWindParticFats();
     
@@ -193,11 +193,17 @@ class Renderer extends OptionizedCorecofigured {
       this._ring.stat.ingear[i] = 0;
     }
   }
-  _dimWind() {
-    let dimRatio = Math.pow(0.5, this._iter.dt);
+  _dimAndPumpWind() {
+    let dimWindRatio = Math.pow(0.5, this._iter.dt);
+    let pumpPower = (this._input.analogF.value - 0.5) * 10;
     for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
-      this._ring.ph.wind[i] *= dimRatio;
+      // dim
+      this._ring.ph.wind[i] *= dimWindRatio;
+      
+      // pump
+      this._ring.ph.wind[i] += (1 - dimWindRatio) * pumpPower * this._initialOptions.masterPixelCount
     }
+      
   }
   _fillWindBlack() {
     for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
@@ -391,6 +397,7 @@ class Renderer extends OptionizedCorecofigured {
   }  
 
   _drawOnWindParticFats() {
+    let dimWindRatio = Math.pow(0.5, this._iter.dt);
     for (let i = 0; i < this._initialOptions.particFatsMaxCount; i++) {
       let pos = this._partic.fats[i * 6 + 1];
       let vel = this._partic.fats[i * 6 + 2];
@@ -400,7 +407,9 @@ class Renderer extends OptionizedCorecofigured {
       let intPosFrom = Math.floor(pos - halfSize);
       let intPosTo = Math.floor(pos + halfSize);
       for (let ii = intPosFrom; ii <= intPosTo; ii++) {
-        this._ring.ph.wind[ii] = vel;
+        let wind = this._ring.ph.wind[ii];
+        wind = (vel - wind) * dimWindRatio;
+        this._ring.ph.wind[ii] = wind;
       }
     }
   }  
@@ -424,6 +433,7 @@ class Renderer extends OptionizedCorecofigured {
   }  
 
   _drawOnWindParticHeroes() {
+    let dimWindRatio = Math.pow(0.5, this._iter.dt);
     for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
       let pos = this._partic.heroes[i * 6 + 1];
       let vel = this._partic.heroes[i * 6 + 2];
@@ -431,7 +441,9 @@ class Renderer extends OptionizedCorecofigured {
       let intPosFrom = Math.floor(pos - halfSize);
       let intPosTo = Math.floor(pos + halfSize);
       for (let ii = intPosFrom; ii <= intPosTo; ii++) {
-        this._ring.ph.wind[ii] = vel;
+        let wind = this._ring.ph.wind[ii];
+        wind = (vel - wind) * dimWindRatio;
+        this._ring.ph.wind[ii] = wind;
       }
     }
   }  

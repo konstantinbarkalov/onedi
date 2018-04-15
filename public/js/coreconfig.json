@@ -48,6 +48,12 @@
         "label": "colorness",
         "initialValue": 0.5
       },
+      "analogF": {
+        "type": "analog",
+        "label": "pump",
+        "initialValue": 0.5
+      },
+
 
       "switchA": {
         "type": "switch",

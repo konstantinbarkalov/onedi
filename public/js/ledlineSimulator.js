@@ -26,10 +26,17 @@ function LedlineSimulator({databus, $container}) {
   let $stat = $('<canvas></canvas>').addClass('ledline-simulator-stat');
   $container.append($stat);
   
-  that._isDebugShown = false;
-  let $debugSwitch = $('<input type="checkbox"></input>').addClass('ledline-simulator-debug-switch');
-  $container.append($stat);
+  let $$debug = $masterCanvas.add(
+    //$composeCanvas,
+    $windCanvas).add(
+    $ingearCanvas).add(
+    $heatCanvas).add(
+    $stat);
 
+  let $debugSwitch = $('<input type="checkbox"></input>').addClass('ledline-simulator-debug-switch');
+  $container.append($debugSwitch);
+  
+  
   that._masterCanvasScaledWidth = 0;
   that._masterCanvasScaledHeight = 0;
   that._masterCanvas = null;
@@ -76,6 +83,12 @@ function LedlineSimulator({databus, $container}) {
       updateCanvasScaledSize();
     });
     updateCanvasScaledSize();
+
+    $debugSwitch.on('change', () => {
+      console.log('yoyo');
+      updateDebugVisibility();
+    });
+    updateDebugVisibility();
   }
   that._stat = {
     count: 0,
@@ -88,6 +101,10 @@ function LedlineSimulator({databus, $container}) {
       ingear: null,
       heat: null,
     },
+  }
+  function updateDebugVisibility() {
+    let isDebugShown = $debugSwitch.prop('checked');
+    $$debug.toggle(isDebugShown);
   }
   function stat({master, compose, wind, ingear, heat}) {
     statGenericImage('master', masterPixelCount, master);
