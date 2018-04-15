@@ -26,7 +26,9 @@ function LedlineSimulator({databus, $container}) {
   let $stat = $('<canvas></canvas>').addClass('ledline-simulator-stat');
   $container.append($stat);
   
-  
+  that._isDebugShown = false;
+  let $debugSwitch = $('<input type="checkbox"></input>').addClass('ledline-simulator-debug-switch');
+  $container.append($stat);
 
   that._masterCanvasScaledWidth = 0;
   that._masterCanvasScaledHeight = 0;

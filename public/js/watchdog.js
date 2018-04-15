@@ -54,13 +54,13 @@ class Watchdog extends OptionizedCorecofigured {
     }
   }
   _alert(error) {
-    if (this.initialOptions.dieFast) {
+    if (this._initialOptions.dieFast) {
       throw error;
     } else {
       console.warn(error);
     }
   }
-  
+
   _awaitCallback() {
     this._runtimeOptions.lastTimestamp = Date.now();
   }

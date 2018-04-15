@@ -24,21 +24,28 @@
         "label": "global rotation",
         "initialValue": 0.5
       },
-      "analogB": {
+    
+      "analogC": {
         "type": "analog",
         "label": "global punchness",
         "initialValue": 0.5
       },
       
-      "analogC": {
+      "analogD": {
         "type": "analog",
         "label": "hero punchness",
         "initialValue": 0.5
       },
 
-      "analogD": {
+      "analogE": {
         "type": "analog",
         "label": "punchness curve",
+        "initialValue": 0.5
+      },
+
+      "analogB": {
+        "type": "analog",
+        "label": "colorness",
         "initialValue": 0.5
       },
 
@@ -50,19 +57,20 @@
       "switchB": {
         "type": "switch",
         "label": "heat protection",
-        "initialValue": true
+        "initialValue": false
        },
        "switchC": {
         "type": "switch",
-        "label": "overcolor",
-        "initialValue": false,
+        "label": "colorness overcolor",
+        "initialValue": true,
         "description": "Instagram-alike color overgain with cost of total dynamic range loss."
       },
       "switchD": {
         "type": "switch",
-        "label": "debug stuff",
-        "initialValue": true
-       }
+        "label": "colorness harder",
+        "initialValue": false,
+        "description": "Extra contrast for right end of colorness only."
+      }
     },
     "output": {
       "statusledA": {

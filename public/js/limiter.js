@@ -28,7 +28,7 @@ class Limiter extends OptionizedCorecofigured {
   }
 
   reset() {
-    this._fillHeatBlack();
+    this._fillHeatGray();
   }
   get bypass() {
     return this._runtimeOptions.bypass;
@@ -53,13 +53,22 @@ class Limiter extends OptionizedCorecofigured {
     }
     this._calcHeat(pixels, dt, clamp);
   }
-  _fillHeatBlack() {
+  _fillHeatGray() {
     for (let i = 0; i < this._initialOptions.pixelCount * 3; i++) {
-      this._heatRing[i] = 0;
+      this._heatRing[i] = 0.5;
     }
   }
-  _calcHeat(pixels, dt, clamp = {from: 0, to: 1}) { 
-    let chillingRatio = Math.pow(0.5, dt / 10);
+  _calcHeat(pixels, dt, clamp = {from: 0, to: 1}) {
+    let chillingRatio;
+    if (dt > 1) {
+      // first run or long-resume
+      this.reset();
+      chillingRatio = 0.5;
+    } else {
+      chillingRatio = Math.pow(0.5, dt / 10);
+      // drops half after 10 secs
+    }
+    
     let gainingRatio = 1 - chillingRatio;
     let clampDiff = clamp.to - clamp.from;
     for (let i = 0; i < this._initialOptions.pixelCount; i++) {
