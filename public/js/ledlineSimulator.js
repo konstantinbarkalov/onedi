@@ -2,7 +2,7 @@
 const coreconfig = require('./coreconfig.json');
 const masterPixelCount = coreconfig.render.master.pixelCount;
 const composePixelCount = coreconfig.render.composes.ledlineA.pixelCount;
-const windPixelCount = masterPixelCount;
+const flowPixelCount = masterPixelCount;
 const ingearPixelCount = composePixelCount;
 const heatPixelCount = composePixelCount;
 
@@ -17,8 +17,8 @@ function LedlineSimulator({databus, $container}) {
   $container.append($masterCanvas);
   let $composeCanvas = $('<canvas></canvas>').addClass('ledline-simulator-compose-canvas'); 
   $container.append($composeCanvas);
-  let $windCanvas = $('<canvas></canvas>').addClass('ledline-simulator-wind-canvas'); 
-  $container.append($windCanvas);
+  let $flowCanvas = $('<canvas></canvas>').addClass('ledline-simulator-flow-canvas'); 
+  $container.append($flowCanvas);
   let $ingearCanvas = $('<canvas></canvas>').addClass('ledline-simulator-ingear-canvas'); 
   $container.append($ingearCanvas);
   let $heatCanvas = $('<canvas></canvas>').addClass('ledline-simulator-heat-canvas'); 
@@ -28,7 +28,7 @@ function LedlineSimulator({databus, $container}) {
   
   let $$debug = $masterCanvas.add(
     //$composeCanvas,
-    $windCanvas).add(
+    $flowCanvas).add(
     $ingearCanvas).add(
     $heatCanvas).add(
     $stat);
@@ -45,10 +45,10 @@ function LedlineSimulator({databus, $container}) {
   that._composeCanvasScaledHeight = 0;
   that._composeCanvas = null;
   that._composeCtx = null;
-  that._windCanvasScaledWidth = 0;
-  that._windCanvasScaledHeight = 0;
-  that._windCanvas = null;
-  that._windCtx = null;
+  that._flowCanvasScaledWidth = 0;
+  that._flowCanvasScaledHeight = 0;
+  that._flowCanvas = null;
+  that._flowCtx = null;
   that._ingearCanvasScaledWidth = 0;
   that._ingearCanvasScaledHeight = 0;
   that._ingearCanvas = null;
@@ -66,10 +66,10 @@ function LedlineSimulator({databus, $container}) {
     that._composeCtx = that._composeCanvas.getContext('2d');  
     that._composeCanvas.width = composePixelCount;
     that._composeCanvas.height = 1;
-    that._windCanvas = $windCanvas[0];
-    that._windCtx = that._windCanvas.getContext('2d');  
-    that._windCanvas.width = windPixelCount;
-    that._windCanvas.height = 1;
+    that._flowCanvas = $flowCanvas[0];
+    that._flowCtx = that._flowCanvas.getContext('2d');  
+    that._flowCanvas.width = flowPixelCount;
+    that._flowCanvas.height = 1;
     that._ingearCanvas = $ingearCanvas[0];
     that._ingearCtx = that._ingearCanvas.getContext('2d');  
     that._ingearCanvas.width = ingearPixelCount;
@@ -97,7 +97,7 @@ function LedlineSimulator({databus, $container}) {
     image: {
       master: null,
       compose: null,
-      wind: null,
+      flow: null,
       ingear: null,
       heat: null,
     },
@@ -106,10 +106,10 @@ function LedlineSimulator({databus, $container}) {
     let isDebugShown = $debugSwitch.prop('checked');
     $$debug.toggle(isDebugShown);
   }
-  function stat({master, compose, wind, ingear, heat}) {
+  function stat({master, compose, flow, ingear, heat}) {
     statGenericImage('master', masterPixelCount, master);
     statGenericImage('compose', composePixelCount, compose);
-    statGenericImage('wind', windPixelCount, wind);
+    statGenericImage('flow', flowPixelCount, flow);
     statGenericImage('ingear', ingearPixelCount, ingear);
     statGenericImage('heat', heatPixelCount, heat);
     statFps();
@@ -151,21 +151,21 @@ function LedlineSimulator({databus, $container}) {
     that._masterCanvasScaledHeight = $masterCanvas.height();
     that._composeCanvasScaledWidth = $composeCanvas.width();
     that._composeCanvasScaledHeight = $composeCanvas.height();
-    that._windCanvasScaledWidth = $windCanvas.width();
-    that._windCanvasScaledHeight = $windCanvas.height();
+    that._flowCanvasScaledWidth = $flowCanvas.width();
+    that._flowCanvasScaledHeight = $flowCanvas.height();
     that._ingearCanvasScaledWidth = $ingearCanvas.width();
     that._ingearCanvasScaledHeight = $ingearCanvas.height();
     that._heatCanvasScaledWidth = $heatCanvas.width();
     that._heatCanvasScaledHeight = $heatCanvas.height();
   }
 
-  function onRendered({master, compose, wind, ingear, heat}) {
+  function onRendered({master, compose, flow, ingear, heat}) {
     updateGenericCanvas(that._masterCtx, masterPixelCount, master);
     updateGenericCanvas(that._composeCtx, composePixelCount, compose);
-    updateGenericCanvas(that._windCtx, windPixelCount, wind);
+    updateGenericCanvas(that._flowCtx, flowPixelCount, flow);
     updateGenericCanvas(that._ingearCtx, ingearPixelCount, ingear);
     updateGenericCanvas(that._heatCtx, heatPixelCount, heat);
-    stat({master, compose, wind, ingear, heat});
+    stat({master, compose, flow, ingear, heat});
   }
   function updateStat() {
     let html = '';
@@ -173,7 +173,7 @@ function LedlineSimulator({databus, $container}) {
     html += `total: ${that._stat.count}</br> `;
     html += `master.median: ${that._stat.image.master.median.s.toFixed(1)} (r${that._stat.image.master.median.r.toFixed(1)} g${that._stat.image.master.median.g.toFixed(1)} b${that._stat.image.master.median.b.toFixed(1)})</br> `;
     html += `compose.median: ${that._stat.image.compose.median.s.toFixed(1)} (r${that._stat.image.compose.median.r.toFixed(1)} g${that._stat.image.compose.median.g.toFixed(1)} b${that._stat.image.compose.median.b.toFixed(1)})</br> `;
-    html += `wind.median: ${that._stat.image.wind.median.s.toFixed(1)} (r${that._stat.image.wind.median.r.toFixed(1)} g${that._stat.image.wind.median.g.toFixed(1)} b${that._stat.image.wind.median.b.toFixed(1)})</br> `;
+    html += `flow.median: ${that._stat.image.flow.median.s.toFixed(1)} (r${that._stat.image.flow.median.r.toFixed(1)} g${that._stat.image.flow.median.g.toFixed(1)} b${that._stat.image.flow.median.b.toFixed(1)})</br> `;
     html += `ingear.median: ${that._stat.image.ingear.median.s.toFixed(1)} (r${that._stat.image.ingear.median.r.toFixed(1)} g${that._stat.image.ingear.median.g.toFixed(1)} b${that._stat.image.ingear.median.b.toFixed(1)})</br> `;
     html += `heat.median: ${that._stat.image.heat.median.s.toFixed(1)} (r${that._stat.image.heat.median.r.toFixed(1)} g${that._stat.image.heat.median.g.toFixed(1)} b${that._stat.image.heat.median.b.toFixed(1)})</br> `;
 

@@ -14,7 +14,7 @@ class Renderer extends OptionizedCorecofigured {
       beatPerLoop: 8,
       particDynasBoomCount: 512,
       particDynasBoomVel: 1500,
-      windBoomVel: 1000,
+      flowBoomVel: 1000,
       particDynasAverageTtl: 10,
       particDynasBurnTtl: 50,
       pumpMaxPower: 10,
@@ -50,7 +50,7 @@ class Renderer extends OptionizedCorecofigured {
         compose: new Float32Array(this._initialOptions.composePixelCount * 3),
       },
       ph: {
-        wind: new Float32Array(this._initialOptions.masterPixelCount),
+        flow: new Float32Array(this._initialOptions.masterPixelCount),
       },
       stat: {
         ingear: new Float32Array(this._initialOptions.composePixelCount * 3),
@@ -92,7 +92,7 @@ class Renderer extends OptionizedCorecofigured {
     this._iter.previousExplodeToParticDynasloopstamp = 0;
   }
   _resetFill() {
-    this._fillWindBlack();
+    this._fillFlowBlack();
     this._fillMasterBlack();
     this._fillParticDynasRandom();
     this._fillParticFatsRandom();
@@ -146,14 +146,14 @@ class Renderer extends OptionizedCorecofigured {
     this._updateIterTime();
     this._liveIterStamp();
    
-    this._dimAndPumpWind();
+    this._dimAndPumpFlow();
     this._liveParticFats();
-    this._drawOnWindParticFats();
+    this._drawOnFlowParticFats();
     
     this._liveParticHeroes();
-    this._drawOnWindParticHeroes();
+    this._drawOnFlowParticHeroes();
 
-    this._liveAndDrawOnWindExlodes();
+    this._liveAndDrawOnFlowExlodes();
     this._liveParticDynas();
     
     this._fillMasterBlack();
@@ -198,26 +198,26 @@ class Renderer extends OptionizedCorecofigured {
       this._ring.stat.ingear[i] = 0;
     }
   }
-  _dimAndPumpWind() {
-    let dimWindRatio = Math.pow(0.5, this._iter.dt);
+  _dimAndPumpFlow() {
+    let dimFlowRatio = Math.pow(0.5, this._iter.dt);
     let pumpPower = (this._input.analogF.value - 0.5) * this._initialOptions.pumpMaxPower;
     for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
       // dim
-      this._ring.ph.wind[i] *= dimWindRatio;
+      this._ring.ph.flow[i] *= dimFlowRatio;
       
       // pump
-      this._ring.ph.wind[i] += (1 - dimWindRatio) * pumpPower * this._initialOptions.masterPixelCount
+      this._ring.ph.flow[i] += (1 - dimFlowRatio) * pumpPower * this._initialOptions.masterPixelCount
     }
       
   }
-  _fillWindBlack() {
+  _fillFlowBlack() {
     for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
       this._ring.g.master[i] = 0;
     }
   }
-  _fillWindRandom() {
+  _fillFlowRandom() {
     for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
-      this._ring.ph.wind[i] = (Math.random() - 0.5) * 5000;
+      this._ring.ph.flow[i] = (Math.random() - 0.5) * 5000;
     }
   }
 
@@ -295,12 +295,12 @@ class Renderer extends OptionizedCorecofigured {
     }
   }
   
-  _liveAndDrawOnWindExlodes() {
+  _liveAndDrawOnFlowExlodes() {
     let nowFatInt = Math.floor(this._iter.loopstampPos * this._initialOptions.particFatsMaxCount);
     let prevFatInt = Math.floor(this._iter.previousExplodeToParticDynasloopstamp * this._initialOptions.particFatsMaxCount);
     if (nowFatInt != prevFatInt) {
       this._explodeParticFat(nowFatInt);
-      this._explodeWind(nowFatInt);
+      this._explodeFlow(nowFatInt);
     }
     this._iter.previousExplodeToParticDynasloopstamp = this._iter.loopstampPos; 
   }
@@ -332,22 +332,22 @@ class Renderer extends OptionizedCorecofigured {
       this._partic.dynas[spawnedparticdynasindex * 8 + 6] = dynaBurnTtl;
     }
   }  
-  _explodeWind(fatIndex) {
+  _explodeFlow(fatIndex) {
     let explodedFatPos = this._partic.fats[fatIndex * 6 + 1];
     
     for (let i = 0; i <= this._initialOptions.masterPixelCount; i++) {
-      let wind = this._ring.ph.wind[i];
+      let flow = this._ring.ph.flow[i];
       let diffRatio = (explodedFatPos - i) / this._initialOptions.masterPixelCount; 
-      let windExplodeRatio = ((diffRatio % 1) + 1) % 1 - 0.5;
-      wind += windExplodeRatio * this._initialOptions.windBoomVel;
-      this._ring.ph.wind[i] = wind;
+      let flowExplodeRatio = ((diffRatio % 1) + 1) % 1 - 0.5;
+      flow += flowExplodeRatio * this._initialOptions.flowBoomVel;
+      this._ring.ph.flow[i] = flow;
     }
   }  
 
   _liveParticDynas() {
     let chillDimRatio = Math.pow(0.5, this._iter.dt);        
     chillDimRatio = 1;
-    let windAffectRatio = 1 - Math.pow(0.25, this._iter.dt);        
+    let flowAffectRatio = 1 - Math.pow(0.25, this._iter.dt);        
     for (let i = 0; i < this._initialOptions.particDynasMaxCount; i++) {
       let ttl = this._partic.dynas[i * 8 + 0];
       if (ttl > this._iter.dt) {
@@ -359,8 +359,8 @@ class Renderer extends OptionizedCorecofigured {
         burnTtl = Math.max(0, burnTtl);
         vel *= chillDimRatio;
         let intPos = Math.floor(pos);
-        let windVel = this._ring.ph.wind[intPos];
-        vel -= (vel - windVel) * windAffectRatio;
+        let flowVel = this._ring.ph.flow[intPos];
+        vel -= (vel - flowVel) * flowAffectRatio;
         
         pos += (vel * this._iter.dt);
         pos %= this._initialOptions.masterPixelCount;
@@ -436,8 +436,8 @@ class Renderer extends OptionizedCorecofigured {
     }
   }  
 
-  _drawOnWindParticFats() {
-    let dimWindRatio = Math.pow(0.5, this._iter.dt);
+  _drawOnFlowParticFats() {
+    let dimFlowRatio = Math.pow(0.5, this._iter.dt);
     for (let i = 0; i < this._initialOptions.particFatsMaxCount; i++) {
       let pos = this._partic.fats[i * 6 + 1];
       let vel = this._partic.fats[i * 6 + 2];
@@ -447,9 +447,9 @@ class Renderer extends OptionizedCorecofigured {
       let intPosFrom = Math.floor(pos - halfSize);
       let intPosTo = Math.floor(pos + halfSize);
       for (let ii = intPosFrom; ii <= intPosTo; ii++) {
-        let wind = this._ring.ph.wind[ii];
-        wind = (vel - wind) * dimWindRatio;
-        this._ring.ph.wind[ii] = wind;
+        let flow = this._ring.ph.flow[ii];
+        flow = (vel - flow) * dimFlowRatio;
+        this._ring.ph.flow[ii] = flow;
       }
     }
   }  
@@ -472,8 +472,8 @@ class Renderer extends OptionizedCorecofigured {
     }
   }  
 
-  _drawOnWindParticHeroes() {
-    let dimWindRatio = Math.pow(0.5, this._iter.dt);
+  _drawOnFlowParticHeroes() {
+    let dimFlowRatio = Math.pow(0.5, this._iter.dt);
     for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
       let pos = this._partic.heroes[i * 6 + 1];
       let vel = this._partic.heroes[i * 6 + 2];
@@ -481,9 +481,9 @@ class Renderer extends OptionizedCorecofigured {
       let intPosFrom = Math.floor(pos - halfSize);
       let intPosTo = Math.floor(pos + halfSize);
       for (let ii = intPosFrom; ii <= intPosTo; ii++) {
-        let wind = this._ring.ph.wind[ii];
-        wind = (vel - wind) * dimWindRatio;
-        this._ring.ph.wind[ii] = wind;
+        let flow = this._ring.ph.flow[ii];
+        flow = (vel - flow) * dimFlowRatio;
+        this._ring.ph.flow[ii] = flow;
       }
     }
   }  
@@ -595,11 +595,11 @@ class Renderer extends OptionizedCorecofigured {
       composePixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 2] * 256)));
     }
     
-    let windPixels = new Array(this._initialOptions.masterPixelCount * 3);
+    let flowPixels = new Array(this._initialOptions.masterPixelCount * 3);
     for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
-      windPixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(         this._ring.ph.wind[i] / 1000 * 256)));
-      windPixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(     1 - this._ring.ph.wind[i] / 1000  * 256)));
-      windPixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(Math.abs(this._ring.ph.wind[i]) / 1000  * 256)));
+      flowPixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(         this._ring.ph.flow[i] / 1000 * 256)));
+      flowPixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(     1 - this._ring.ph.flow[i] / 1000  * 256)));
+      flowPixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(Math.abs(this._ring.ph.flow[i]) / 1000  * 256)));
     }
 
     let ingearPixels = new Array(this._initialOptions.composePixelCount * 3);
@@ -615,7 +615,7 @@ class Renderer extends OptionizedCorecofigured {
       heatPixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._limiter._heatRing[i * 3 + 1] * 256)));
       heatPixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._limiter._heatRing[i * 3 + 2] * 256)));
     }
-    return {master: masterPixels, compose: composePixels, wind: windPixels, ingear: ingearPixels, heat: heatPixels};
+    return {master: masterPixels, compose: composePixels, flow: flowPixels, ingear: ingearPixels, heat: heatPixels};
   }
   _emitPixels(renderedPixelsset) {
     this._initialOptions.databus.emit('rendered', renderedPixelsset);
