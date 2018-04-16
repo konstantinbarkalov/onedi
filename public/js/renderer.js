@@ -16,7 +16,10 @@ class Renderer extends OptionizedCorecofigured {
       particDynasBoomVel: 1500,
       flowBoomVel: 1000,
       particDynasAverageTtl: 10,
-      particDynasBurnTtl: 50,
+      particDynasBurnTtl: 10,
+      particDynasBaseBrightness: 0.0,
+      burnBornMultiplier: 100,
+      burnDieMultiplier: 1 / 10,
       pumpMaxPower: 10,
     }
   }
@@ -383,11 +386,19 @@ class Renderer extends OptionizedCorecofigured {
     this._partic.dynas[i * 8 + 0] = Math.random() * this._initialOptions.particDynasAverageTtl * 2; // ttl
     this._partic.dynas[i * 8 + 6] = 0; // burnTtl
   } 
+  _particDynasBurnTtlToBrightnessFactor(burnTtl) {
+    let burnTtlRatio = 1 - burnTtl / this._initialOptions.particDynasBurnTtl;
+   
+    let burnBornInvRatio = 1 / this._initialOptions.burnBornMultiplier;
+    let burnDieInvRatio = 1 / this._initialOptions.burnDieMultiplier;
+    // TODO put this invRatios (precalced  1 / val) in _internalOptions instead multipliers
+    let burnInvRatio = burnBornInvRatio - (burnBornInvRatio - burnDieInvRatio) * burnTtlRatio;
+
+    let burnBornBrightnessFactor = 1 / burnInvRatio; 
+    return burnBornBrightnessFactor;    
+  }
+
   _drawOnMasterParticDynas() {
-    const burnBornMultiplier = 10000;
-    const burnDieMultiplier = 0.01;    
-    let burnBornRatio = 1 / burnBornMultiplier;
-    // this is a synthetic ratio that is used to be a (part of) dividor 
 
     for (let i = 0; i < this._initialOptions.particDynasMaxCount; i++) {
       let ttl = this._partic.dynas[i * 8 + 0];
@@ -400,16 +411,8 @@ class Renderer extends OptionizedCorecofigured {
       let b = this._partic.dynas[i * 8 + 5];
 
       let intPos = Math.floor(pos);
-      let burnTtlRatio = 1 - burnTtl / this._initialOptions.particDynasBurnTtl;
 
-      let burnBrightnessRatio = (burnTtlRatio * (1 - burnBornRatio) + burnBornRatio);
-      // this is a synthetic ratio that is used to be a dividor 
-      // and since it can not be 0, so we "mix" a burnRatio when burnTtlRatio is 0 
-      // (and weaken a burnTtlRatio for final sum to be 1 when burnTtlRatio is 1) 
-      let burnBrightnessFactor = burnDieMultiplier / burnBrightnessRatio;
-      
-      let brightnessFactor = burnBrightnessFactor;
-      
+      let brightnessFactor = this._initialOptions.particDynasBaseBrightness + this._particDynasBurnTtlToBrightnessFactor(burnTtl);      
       this._ring.g.master[intPos * 3 + 0] += r * brightnessFactor;
       this._ring.g.master[intPos * 3 + 1] += g * brightnessFactor;
       this._ring.g.master[intPos * 3 + 2] += b * brightnessFactor;
