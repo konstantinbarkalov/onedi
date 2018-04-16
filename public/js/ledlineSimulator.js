@@ -23,7 +23,7 @@ function LedlineSimulator({databus, $container}) {
   $container.append($ingearCanvas);
   let $heatCanvas = $('<canvas></canvas>').addClass('ledline-simulator-heat-canvas'); 
   $container.append($heatCanvas);
-  let $stat = $('<canvas></canvas>').addClass('ledline-simulator-stat');
+  let $stat = $('<div></div>').addClass('ledline-simulator-stat');
   $container.append($stat);
   
   let $$debug = $masterCanvas.add(

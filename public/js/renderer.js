@@ -2,6 +2,7 @@
 // ES6
 import Limiter from './limiter.js';
 import OptionizedCorecofigured from './optionizedCorecofigured.js';
+import { METHODS } from 'http';
 
 class Renderer extends OptionizedCorecofigured {
   static get _defaultInitialOptions() {
@@ -13,6 +14,10 @@ class Renderer extends OptionizedCorecofigured {
       beatPerLoop: 8,
       particDynasBoomCount: 512,
       particDynasBoomVel: 1500,
+      windBoomVel: 1000,
+      particDynasAverageTtl: 10,
+      particDynasBurnTtl: 50,
+      pumpMaxPower: 10,
     }
   }
   static get _defaultRuntimeOptions() {
@@ -53,7 +58,7 @@ class Renderer extends OptionizedCorecofigured {
     }
 
     this._partic = {
-      dynas: new Float32Array(this._initialOptions.particDynasMaxCount * 6),
+      dynas: new Float32Array(this._initialOptions.particDynasMaxCount * 8),
       fats: new Float32Array(this._initialOptions.particFatsMaxCount * 6),
       heroes: new Float32Array(this._initialOptions.particHeroesMaxCount * 6),
     }
@@ -148,7 +153,7 @@ class Renderer extends OptionizedCorecofigured {
     this._liveParticHeroes();
     this._drawOnWindParticHeroes();
 
-    this._liveExplodeToParticDynas();
+    this._liveAndDrawOnWindExlodes();
     this._liveParticDynas();
     
     this._fillMasterBlack();
@@ -195,7 +200,7 @@ class Renderer extends OptionizedCorecofigured {
   }
   _dimAndPumpWind() {
     let dimWindRatio = Math.pow(0.5, this._iter.dt);
-    let pumpPower = (this._input.analogF.value - 0.5) * 10;
+    let pumpPower = (this._input.analogF.value - 0.5) * this._initialOptions.pumpMaxPower;
     for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
       // dim
       this._ring.ph.wind[i] *= dimWindRatio;
@@ -218,12 +223,14 @@ class Renderer extends OptionizedCorecofigured {
 
   _fillParticDynasRandom() {
     for (let i = 0; i < this._initialOptions.particDynasMaxCount; i++) {
-      this._partic.dynas[i * 6 + 0] = Math.floor(Math.random() * 5000);
-      this._partic.dynas[i * 6 + 1] = Math.random() * this._initialOptions.masterPixelCount;
-      this._partic.dynas[i * 6 + 2] = Math.random() - 0.5;
-      this._partic.dynas[i * 6 + 3] = Math.random();
-      this._partic.dynas[i * 6 + 4] = Math.random();
-      this._partic.dynas[i * 6 + 5] = Math.random();
+      this._partic.dynas[i * 8 + 0] = Math.random() * this._initialOptions.particDynasAverageTtl * 2;
+      this._partic.dynas[i * 8 + 1] = Math.random() * this._initialOptions.masterPixelCount;
+      this._partic.dynas[i * 8 + 2] = Math.random() - 0.5;
+      this._partic.dynas[i * 8 + 3] = Math.random();
+      this._partic.dynas[i * 8 + 4] = Math.random();
+      this._partic.dynas[i * 8 + 5] = Math.random();
+      this._partic.dynas[i * 8 + 6] = 0; // burnTtl
+      this._partic.dynas[i * 8 + 7] = Math.random(); // entropy
     }
   }
   _fillParticFatsRandom() {
@@ -287,11 +294,13 @@ class Renderer extends OptionizedCorecofigured {
       this._partic.heroes[i * 6 + 2] = vel;
     }
   }
-  _liveExplodeToParticDynas() {
+  
+  _liveAndDrawOnWindExlodes() {
     let nowFatInt = Math.floor(this._iter.loopstampPos * this._initialOptions.particFatsMaxCount);
     let prevFatInt = Math.floor(this._iter.previousExplodeToParticDynasloopstamp * this._initialOptions.particFatsMaxCount);
     if (nowFatInt != prevFatInt) {
-      this._explodeParticFat(nowFatInt);    
+      this._explodeParticFat(nowFatInt);
+      this._explodeWind(nowFatInt);
     }
     this._iter.previousExplodeToParticDynasloopstamp = this._iter.loopstampPos; 
   }
@@ -306,18 +315,32 @@ class Renderer extends OptionizedCorecofigured {
     for (let i = 0; i < this._initialOptions.particDynasBoomCount; i++) {
       let spawnedparticdynasindex = Math.floor(Math.random() * this._initialOptions.particDynasMaxCount)
       // todo: smart grave
-      let dynapos = pos;
-      let dynavel = vel + (Math.random() - 0.5) * this._initialOptions.particDynasBoomVel;
-      let dynar = r + (Math.random() - 0.5) * 0.2;
-      let dynag = g + (Math.random() - 0.5) * 0.2;
-      let dynab = b + (Math.random() - 0.5) * 0.2;
+      let dynaTtl = Math.random() * this._initialOptions.particDynasAverageTtl * 2;
+      let dynaPos = pos;
+      let dynaVel = vel + (Math.random() - 0.5) * this._initialOptions.particDynasBoomVel;
+      let dynaR = r + (Math.random() - 0.5) * 0.5;
+      let dynaG = g + (Math.random() - 0.5) * 0.5;
+      let dynaB = b + (Math.random() - 0.5) * 0.5;
+      let dynaBurnTtl = this._initialOptions.particDynasBurnTtl;
       
-      this._partic.dynas[spawnedparticdynasindex * 6 + 0] = Math.floor(Math.random() * 2000);
-      this._partic.dynas[spawnedparticdynasindex * 6 + 1] = dynapos;
-      this._partic.dynas[spawnedparticdynasindex * 6 + 2] = dynavel;
-      this._partic.dynas[spawnedparticdynasindex * 6 + 3] = dynar;
-      this._partic.dynas[spawnedparticdynasindex * 6 + 4] = dynag;
-      this._partic.dynas[spawnedparticdynasindex * 6 + 5] = dynab;
+      this._partic.dynas[spawnedparticdynasindex * 8 + 0] = dynaTtl;
+      this._partic.dynas[spawnedparticdynasindex * 8 + 1] = dynaPos;
+      this._partic.dynas[spawnedparticdynasindex * 8 + 2] = dynaVel;
+      this._partic.dynas[spawnedparticdynasindex * 8 + 3] = dynaR;
+      this._partic.dynas[spawnedparticdynasindex * 8 + 4] = dynaG;
+      this._partic.dynas[spawnedparticdynasindex * 8 + 5] = dynaB;
+      this._partic.dynas[spawnedparticdynasindex * 8 + 6] = dynaBurnTtl;
+    }
+  }  
+  _explodeWind(fatIndex) {
+    let explodedFatPos = this._partic.fats[fatIndex * 6 + 1];
+    
+    for (let i = 0; i <= this._initialOptions.masterPixelCount; i++) {
+      let wind = this._ring.ph.wind[i];
+      let diffRatio = (explodedFatPos - i) / this._initialOptions.masterPixelCount; 
+      let windExplodeRatio = ((diffRatio % 1) + 1) % 1 - 0.5;
+      wind += windExplodeRatio * this._initialOptions.windBoomVel;
+      this._ring.ph.wind[i] = wind;
     }
   }  
 
@@ -326,18 +349,18 @@ class Renderer extends OptionizedCorecofigured {
     chillDimRatio = 1;
     let windAffectRatio = 1 - Math.pow(0.25, this._iter.dt);        
     for (let i = 0; i < this._initialOptions.particDynasMaxCount; i++) {
-      let ttl = this._partic.dynas[i * 6 + 0];
-      if (ttl > 0) {
-        ttl--;
-        let pos = this._partic.dynas[i * 6 + 1];
-        let vel = this._partic.dynas[i * 6 + 2];
-        
+      let ttl = this._partic.dynas[i * 8 + 0];
+      if (ttl > this._iter.dt) {
+        ttl -= this._iter.dt;
+        let pos = this._partic.dynas[i * 8 + 1];
+        let vel = this._partic.dynas[i * 8 + 2];
+        let burnTtl = this._partic.dynas[i * 8 + 6];
+        burnTtl -= this._iter.dt;
+        burnTtl = Math.max(0, burnTtl);
         vel *= chillDimRatio;
-        //vel += (Math.random() - 0.5) * 0.001;
-        
         let intPos = Math.floor(pos);
         let windVel = this._ring.ph.wind[intPos];
-        vel = vel - (vel - windVel) * windAffectRatio;
+        vel -= (vel - windVel) * windAffectRatio;
         
         pos += (vel * this._iter.dt);
         pos %= this._initialOptions.masterPixelCount;
@@ -345,9 +368,10 @@ class Renderer extends OptionizedCorecofigured {
         pos %= this._initialOptions.masterPixelCount;
 
         
-        this._partic.dynas[i * 6 + 0] = ttl;
-        this._partic.dynas[i * 6 + 1] = pos;
-        this._partic.dynas[i * 6 + 2] = vel;
+        this._partic.dynas[i * 8 + 0] = ttl;
+        this._partic.dynas[i * 8 + 1] = pos;
+        this._partic.dynas[i * 8 + 2] = vel;
+        this._partic.dynas[i * 8 + 6] = burnTtl;
       } else {
         this._buryParcticDyna(i);
       }
@@ -356,23 +380,39 @@ class Renderer extends OptionizedCorecofigured {
   _buryParcticDyna(i) {
     //TODO
     // respawn as dirty solution
-    this._partic.dynas[i * 6 + 0] = 1000; // ttl
-
+    this._partic.dynas[i * 8 + 0] = Math.random() * this._initialOptions.particDynasAverageTtl * 2; // ttl
+    this._partic.dynas[i * 8 + 6] = 0; // burnTtl
   } 
   _drawOnMasterParticDynas() {
+    const burnBornMultiplier = 10000;
+    const burnDieMultiplier = 0.01;    
+    let burnBornRatio = 1 / burnBornMultiplier;
+    // this is a synthetic ratio that is used to be a (part of) dividor 
+
     for (let i = 0; i < this._initialOptions.particDynasMaxCount; i++) {
-      //let ttl = this._partic.dynas[i * 6 + 0];
-      let pos = this._partic.dynas[i * 6 + 1];
-      let vel = this._partic.dynas[i * 6 + 2];
-      let rgbVelMultitlier = 1;// + Math.abs(vel) / 100;
-      let r = this._partic.dynas[i * 6 + 3] * rgbVelMultitlier;
-      let g = this._partic.dynas[i * 6 + 4] * rgbVelMultitlier;
-      let b = this._partic.dynas[i * 6 + 5] * rgbVelMultitlier;
+      let ttl = this._partic.dynas[i * 8 + 0];
+      let pos = this._partic.dynas[i * 8 + 1];
+      let vel = this._partic.dynas[i * 8 + 2];
+      let burnTtl = this._partic.dynas[i * 8 + 6];
+
+      let r = this._partic.dynas[i * 8 + 3];
+      let g = this._partic.dynas[i * 8 + 4];
+      let b = this._partic.dynas[i * 8 + 5];
 
       let intPos = Math.floor(pos);
-      this._ring.g.master[intPos * 3 + 0] += r * 0.25;
-      this._ring.g.master[intPos * 3 + 1] += g * 0.25;
-      this._ring.g.master[intPos * 3 + 2] += b * 0.25;
+      let burnTtlRatio = 1 - burnTtl / this._initialOptions.particDynasBurnTtl;
+
+      let burnBrightnessRatio = (burnTtlRatio * (1 - burnBornRatio) + burnBornRatio);
+      // this is a synthetic ratio that is used to be a dividor 
+      // and since it can not be 0, so we "mix" a burnRatio when burnTtlRatio is 0 
+      // (and weaken a burnTtlRatio for final sum to be 1 when burnTtlRatio is 1) 
+      let burnBrightnessFactor = burnDieMultiplier / burnBrightnessRatio;
+      
+      let brightnessFactor = burnBrightnessFactor;
+      
+      this._ring.g.master[intPos * 3 + 0] += r * brightnessFactor;
+      this._ring.g.master[intPos * 3 + 1] += g * brightnessFactor;
+      this._ring.g.master[intPos * 3 + 2] += b * brightnessFactor;
     }
   }
   
@@ -447,7 +487,6 @@ class Renderer extends OptionizedCorecofigured {
       }
     }
   }  
-
   _masterToCompose() {
     for (let i = 0; i < this._initialOptions.composePixelCount; i++) {
       let rescaleRate = this._initialOptions.masterPixelCount / this._initialOptions.composePixelCount;
