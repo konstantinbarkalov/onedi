@@ -54,6 +54,22 @@
         "initialValue": 0.5
       },
 
+      "analogG": {
+        "type": "analog",
+        "label": "blur",
+        "initialValue": 0
+      },
+
+      "analogH": {
+        "type": "analog",
+        "label": "sharpen",
+        "initialValue": 0
+      },
+      "analogJ": {
+        "type": "analog",
+        "label": "to be used",
+        "initialValue": 0.5
+      },
 
       "switchA": {
         "type": "switch",
@@ -76,6 +92,21 @@
         "label": "colorness harder",
         "initialValue": false,
         "description": "Extra contrast for right end of colorness only."
+      },
+      "momentaryA": {
+        "type": "momentary",
+        "label": "ephaze",
+        "initialValue": false
+      },
+      "momentaryB": {
+        "type": "momentary",
+        "label": "base strobe",
+        "initialValue": false
+      },
+      "momentaryC": {
+        "type": "momentary",
+        "label": "zig-scratch",
+        "initialValue": false
       }
     },
     "output": {

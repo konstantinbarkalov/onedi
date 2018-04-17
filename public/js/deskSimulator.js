@@ -54,6 +54,22 @@ class DeskSimulator extends OptionizedCorecofigured {
           $widget.append($element);
           $widget.append($label);
           return $widget;
+        },
+        momentary: (callback, {initialValue, label}) => {
+          let $widget = $('<div></div').addClass('desk-simulator-widget desk-simulator-widget--momentary');
+          let $label = $('<div></div>').text(label).addClass('desk-simulator-widget__label');
+          let $element = $('<button></button>').prop('type', 'checkbox')
+            .addClass('desk-simulator-widget__momentary');
+          if (initialValue) { throw new Error('Momentary cannot have nonfalse initialValue')};
+          $element.on('mousedown', ()=>{
+            callback(true);
+          });
+          $(window).on('mouseup', ()=>{
+            callback(false);
+          });
+          $widget.append($element);
+          $widget.append($label);
+          return $widget;
         } 
       },
       output: {
