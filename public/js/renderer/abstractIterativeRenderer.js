@@ -1,10 +1,11 @@
 'use strict';
 // ES6
-import OptionizedCorecofigured from './../optionizedCorecofigured.js';
+import OptionizedCoreconfigured from './../optionizedCoreconfigured.js';
 import Helper from './helper.js';
+import { EventEmitter } from 'events';
 
 let safemod = Helper.safemod;
-class AbstractiveIterativeRenderer extends OptionizedCorecofigured {
+class AbstractiveIterativeRenderer extends OptionizedCoreconfigured {
   static get _defaultInitialOptions() {
     return {
       fps: 60,
@@ -23,15 +24,15 @@ class AbstractiveIterativeRenderer extends OptionizedCorecofigured {
     this._reset();
     setInterval(() => { this._iteration(); }, 1000 / this._initialOptions.fps);    
   }
-  
   _construct() {
     this._iter = {
       // keys and zero values will be filled in _resetIter() via _reset()
     }
+    this.world = new EventEmitter();
   }
   _reset() {
     this._resetIter();
-    // this._limiter.reset(); // uncomment if need
+    this.world.emit('reset');
   }
   _resetIter(){
     this._iter.loopstampPos = 0;
@@ -90,6 +91,9 @@ class AbstractiveIterativeRenderer extends OptionizedCorecofigured {
   _iteration() {
     this._updateIterTime();
     this._liveIterStamp();
+    this.world.emit('live');
+    this.world.emit('draw');
+    this.world.emit('live');
   }
 }
 

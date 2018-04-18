@@ -42,7 +42,6 @@ class Optionized {
   }
 
   _constructOptions(initialOptions, runtimeOptions = initialOptions, lockOnConstruct = true) {
-    console.log('bbb');
     this._initialOptions = this.constructor._weldInitialOptionsWithDefault(initialOptions);
     if (lockOnConstruct) { this.constructor._lockInitialOptions(initialOptions); }
     // options, that are setted at init-time and expect to be read-only (unexpected to be changed at runtime)

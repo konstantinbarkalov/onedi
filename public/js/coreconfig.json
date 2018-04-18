@@ -1,4 +1,9 @@
-{
+{ 
+  "renderer": {
+    "dyna": {
+      "particsMaxCount": 2048
+    }
+  },
   "render": {
     "master": {
       "metricSize": 5,

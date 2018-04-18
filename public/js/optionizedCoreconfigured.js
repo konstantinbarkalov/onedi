@@ -2,7 +2,7 @@
 const coreconfig = require('./coreconfig.json');
 // ES6
 import Optionized from './optionized.js';
-class OptionizedCorecofigured extends Optionized {
+class OptionizedCoreconfigured extends Optionized {
   
   static _getCoreconfigInitialOptions(coreconfig, coreconfigKey) {
     return {  
@@ -38,4 +38,4 @@ class OptionizedCorecofigured extends Optionized {
   }
 
 }
-export default OptionizedCorecofigured;
+export default OptionizedCoreconfigured;

@@ -1,8 +1,8 @@
 'use strict';
 // ES6
-import OptionizedCorecofigured from './optionizedCorecofigured.js';
+import OptionizedCoreconfigured from './optionizedCoreconfigured.js';
 
-class DeskSimulator extends OptionizedCorecofigured {
+class DeskSimulator extends OptionizedCoreconfigured {
   static get _defaultInitialOptions() {
     return {
     }

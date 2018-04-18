@@ -1,9 +1,9 @@
 'use strict';
 
 // ES6
-import OptionizedCorecofigured from './optionizedCorecofigured.js';
+import OptionizedCoreconfigured from './optionizedCoreconfigured.js';
 
-class IonicaClient extends OptionizedCorecofigured {
+class IonicaClient extends OptionizedCoreconfigured {
   static get _defaultInitialOptions() {
     return {
       canAskForRepeat: true,
