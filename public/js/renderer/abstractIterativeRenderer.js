@@ -17,11 +17,6 @@ class AbstractiveIterativeRenderer extends OptionizedCorecofigured {
     }
   }
 
-  static _getCoreconfigInitialOptions(coreconfig, coreconfigKey) {
-    return {
-    }
-  }
-  
   constructor (initialOptions, runtimeOptions) {
     super(initialOptions, runtimeOptions);
     this._construct();

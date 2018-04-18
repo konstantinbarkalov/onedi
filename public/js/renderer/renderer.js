@@ -1,11 +1,11 @@
 'use strict';
 // ES6
 import Limiter from './limiter.js';
-import AbstractIterativeRenderer from './abstractIterativeRenderer.js';
+import RingedRenderer from './ringedRenderer.js';
 import Helper from './helper.js';
 
 let safemod = Helper.safemod;
-class Renderer extends AbstractIterativeRenderer {
+class Renderer extends RingedRenderer {
   static get _defaultInitialOptions() {
     return Object.assign({}, super._defaultInitialOptions, {
       ionica: null,
@@ -32,10 +32,10 @@ class Renderer extends AbstractIterativeRenderer {
   }
 
   static _getCoreconfigInitialOptions(coreconfig, coreconfigKey) {
-    return {
-      masterPixelCount: coreconfig.render.master.pixelCount,
-      composePixelCount: coreconfig.render.composes[coreconfigKey].pixelCount,
-    }
+    return Object.assign({}, super._getCoreconfigInitialOptions(coreconfig, coreconfigKey), {
+      masterPixelCount: coreconfig.render.master.pixelCount,  // RingedRenderer based
+      composePixelCount: coreconfig.render.composes[coreconfigKey].pixelCount,  // RingedRenderer based
+    });
   }
   
   
@@ -45,24 +45,7 @@ class Renderer extends AbstractIterativeRenderer {
     }
     super._construct();
     this._input = this._initialOptions.ionica._input;
-    this._ring = {
-      g: {
-        master: new Float32Array(this._initialOptions.masterPixelCount * 3),
-        compose: new Float32Array(this._initialOptions.composePixelCount * 3),
-        ingear: new Float32Array(this._initialOptions.composePixelCount * 3),
-      },
-      ph: {
-        flow: new Float32Array(this._initialOptions.masterPixelCount),
-      },
-      outputBuffer: {
-        master: new Uint8ClampedArray(this._initialOptions.masterPixelCount * 3),
-        compose: new Uint8ClampedArray(this._initialOptions.composePixelCount * 3),
-        ingear: new Uint8ClampedArray(this._initialOptions.composePixelCount * 3),
-        flow: new Uint8ClampedArray(this._initialOptions.masterPixelCount * 3),
-        heat: new Uint8ClampedArray(this._initialOptions.masterPixelCount * 3),        
-      },
-    }
-
+ 
     this._partic = {
       dynas: new Float32Array(this._initialOptions.particDynasMaxCount * 8),
       fats: new Float32Array(this._initialOptions.particFatsMaxCount * 6),
@@ -75,16 +58,14 @@ class Renderer extends AbstractIterativeRenderer {
 
   _reset() {
     super._reset();
-    this._resetFill();
-    // this._limiter.reset(); // uncomment if need
+    this._resetPartic();
   }
-  _resetFill() {
-    this._fillFlowBlack();
-    this._fillMasterBlack();
+  _resetPartic() {
     this._fillParticDynasRandom();
     this._fillParticFatsRandom();
     this._fillParticHeroesRandom();
   }
+
   _iteration() {
     super._iteration();
     this._iterationPhisic();
@@ -131,28 +112,6 @@ class Renderer extends AbstractIterativeRenderer {
     this._limiter.bypass = !this._input.switchB.value;  
     this._limiter.process(outputBufferputCompose, this._iter.dt, outputBufferputCompose, {from: 0, to: 255});
   }
-  _fillComposeDebug() {
-    for (let i = 0; i < this._initialOptions.composePixelCount * 3; i++) {
-      this._ring.g.compose[i] = 2;
-    }
-  }
-  _fillMasterRandom() {
-    for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
-      this._ring.g.master[i * 3 + 0] = Math.random();
-      this._ring.g.master[i * 3 + 1] = Math.random();
-      this._ring.g.master[i * 3 + 2] = Math.random();
-    }
-  }
-  _fillMasterBlack() {
-    for (let i = 0; i < this._initialOptions.masterPixelCount * 3; i++) {
-      this._ring.g.master[i] = 0;
-    }
-  }
-  _fillIngearBlack() {
-    for (let i = 0; i < this._runtimeOptions.ingearPixelCount * 3; i++) {
-      this._ring.g.ingear[i] = 0;
-    }
-  }
   _dimAndPumpFlow() {
     let dimFlowRatio = Math.pow(0.5, this._iter.dt);
     let pumpPower = (this._input.analogF.value - 0.5) * this._runtimeOptions.pumpMaxPower;
@@ -164,16 +123,6 @@ class Renderer extends AbstractIterativeRenderer {
       this._ring.ph.flow[i] += (1 - dimFlowRatio) * pumpPower * this._initialOptions.masterPixelCount
     }
       
-  }
-  _fillFlowBlack() {
-    for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
-      this._ring.g.master[i] = 0;
-    }
-  }
-  _fillFlowRandom() {
-    for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
-      this._ring.ph.flow[i] = (Math.random() - 0.5) * 5000;
-    }
   }
 
   _fillParticDynasRandom() {
