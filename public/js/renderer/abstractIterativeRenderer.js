@@ -13,7 +13,7 @@ class AbstractiveIterativeRenderer extends OptionizedCorecofigured {
   static get _defaultRuntimeOptions() {
     return {
       beatPerLoop: 8,
-      bpm: 175 / 2,
+      bpm: 120,
     }
   }
 

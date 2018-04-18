@@ -7,16 +7,16 @@ import Helper from './helper.js';
 let safemod = Helper.safemod;
 class Renderer extends AbstractIterativeRenderer {
   static get _defaultInitialOptions() {
-    return {
+    return Object.assign({}, super._defaultInitialOptions, {
       ionica: null,
       particDynasMaxCount: 2048,
       particFatsMaxCount: 8,
       particHeroesMaxCount: 1,
       fps: 60,  // AbstractIterativeRenderer based
-    }
+    });
   }
   static get _defaultRuntimeOptions() {
-    return {
+    return Object.assign({}, super._defaultRuntimeOptions, {
       beatPerLoop: 8,  // AbstractIterativeRenderer based
       particDynasBoomCount: 512,
       particDynasBoomVel: 1500,
@@ -28,7 +28,7 @@ class Renderer extends AbstractIterativeRenderer {
       burnDieMultiplier: 1 / 10,
       pumpMaxPower: 10,
       bpm: 175 / 2,  // AbstractIterativeRenderer based
-    }
+    });
   }
 
   static _getCoreconfigInitialOptions(coreconfig, coreconfigKey) {
@@ -49,12 +49,17 @@ class Renderer extends AbstractIterativeRenderer {
       g: {
         master: new Float32Array(this._initialOptions.masterPixelCount * 3),
         compose: new Float32Array(this._initialOptions.composePixelCount * 3),
+        ingear: new Float32Array(this._initialOptions.composePixelCount * 3),
       },
       ph: {
         flow: new Float32Array(this._initialOptions.masterPixelCount),
       },
-      stat: {
-        ingear: new Float32Array(this._initialOptions.composePixelCount * 3),
+      outputBuffer: {
+        master: new Uint8ClampedArray(this._initialOptions.masterPixelCount * 3),
+        compose: new Uint8ClampedArray(this._initialOptions.composePixelCount * 3),
+        ingear: new Uint8ClampedArray(this._initialOptions.composePixelCount * 3),
+        flow: new Uint8ClampedArray(this._initialOptions.masterPixelCount * 3),
+        heat: new Uint8ClampedArray(this._initialOptions.masterPixelCount * 3),        
       },
     }
 
@@ -65,7 +70,6 @@ class Renderer extends AbstractIterativeRenderer {
     }
 
     this._limiter = new Limiter({coreconfigKey: this._runtimeOptions.coreconfigKey});
-    
     
   }
 
@@ -83,6 +87,13 @@ class Renderer extends AbstractIterativeRenderer {
   }
   _iteration() {
     super._iteration();
+    this._iterationPhisic();
+    this._iterationGraphic();
+    this._iterationUpdateOutputBuffer();
+    this._iterationPostprocessOutputBuffer();
+    this._iterationEmitOutputBuffer();
+  }
+  _iterationPhisic() {
     this._dimAndPumpFlow();
     this._liveParticFats();
     this._drawOnFlowParticFats();
@@ -91,28 +102,34 @@ class Renderer extends AbstractIterativeRenderer {
     this._drawOnFlowParticHeroes();
 
     this._liveAndDrawOnFlowExlodes();
-    this._liveParticDynas();
-    
+    this._liveParticDynas();    
+  }
+  _iterationGraphic() {
     this._fillMasterBlack();
     this._drawOnMasterParticDynas();
-    
     this._drawOnMasterParticFats();
     this._drawOnMasterParticHeroes();
     //this._fillMasterRandom();
-
     this._masterToCompose();
     //this._fillComposeDebug();
-    
     this._drawOnComposeDigitalStrobe();  
     this._composeToIngear();
     this._processComposeWithIngear();
-    let renderedPixelsset = this._createOutputPixels();
-    this._processLimiter(renderedPixelsset.compose);
-    this._emitPixels(renderedPixelsset);
   }
-  _processLimiter(composePixels) {
-   this._limiter.bypass = !this._input.switchB.value;  
-   this._limiter.process(composePixels, this._iter.dt, composePixels, {from: 0, to: 255});
+  _iterationUpdateOutputBuffer() {
+    this._updateOutputBuffer();
+  }
+  _iterationPostprocessOutputBuffer() {
+    this._processLimiter();
+  }
+  _iterationEmitOutputBuffer() {
+    this._emitOutputBuffer();    
+  }
+
+  _processLimiter() {
+    let outputBufferputCompose = this._ring.outputBuffer.compose;
+    this._limiter.bypass = !this._input.switchB.value;  
+    this._limiter.process(outputBufferputCompose, this._iter.dt, outputBufferputCompose, {from: 0, to: 255});
   }
   _fillComposeDebug() {
     for (let i = 0; i < this._initialOptions.composePixelCount * 3; i++) {
@@ -133,7 +150,7 @@ class Renderer extends AbstractIterativeRenderer {
   }
   _fillIngearBlack() {
     for (let i = 0; i < this._runtimeOptions.ingearPixelCount * 3; i++) {
-      this._ring.stat.ingear[i] = 0;
+      this._ring.g.ingear[i] = 0;
     }
   }
   _dimAndPumpFlow() {
@@ -534,22 +551,22 @@ class Renderer extends AbstractIterativeRenderer {
     let gainingRatio = 1 - chillingRatio;
 
     for (let i = 0; i < this._initialOptions.composePixelCount; i++) {
-      this._ring.stat.ingear[i * 3 + 0] = 0;
-      this._ring.stat.ingear[i * 3 + 1] = 0;
-      this._ring.stat.ingear[i * 3 + 2] = 0;
+      this._ring.g.ingear[i * 3 + 0] = 0;
+      this._ring.g.ingear[i * 3 + 1] = 0;
+      this._ring.g.ingear[i * 3 + 2] = 0;
     
       let halfSize = 32;
       let intPosFrom = Math.floor(i - halfSize);
       let intPosTo = Math.floor(i + halfSize);
       for (let ii = intPosFrom; ii <= intPosTo; ii++) {
         let iim = (((ii % this._initialOptions.composePixelCount) + this._initialOptions.composePixelCount) % this._initialOptions.composePixelCount);
-        this._ring.stat.ingear[i * 3 + 0] += this._ring.g.compose[iim * 3 + 0];
-        this._ring.stat.ingear[i * 3 + 1] += this._ring.g.compose[iim * 3 + 1];
-        this._ring.stat.ingear[i * 3 + 2] += this._ring.g.compose[iim * 3 + 2];  
+        this._ring.g.ingear[i * 3 + 0] += this._ring.g.compose[iim * 3 + 0];
+        this._ring.g.ingear[i * 3 + 1] += this._ring.g.compose[iim * 3 + 1];
+        this._ring.g.ingear[i * 3 + 2] += this._ring.g.compose[iim * 3 + 2];  
       }
-      this._ring.stat.ingear[i * 3 + 0] /= halfSize * 2;
-      this._ring.stat.ingear[i * 3 + 1] /= halfSize * 2;
-      this._ring.stat.ingear[i * 3 + 2] /= halfSize * 2;
+      this._ring.g.ingear[i * 3 + 0] /= halfSize * 2;
+      this._ring.g.ingear[i * 3 + 1] /= halfSize * 2;
+      this._ring.g.ingear[i * 3 + 2] /= halfSize * 2;
 
     }
   }
@@ -558,54 +575,55 @@ class Renderer extends AbstractIterativeRenderer {
     let sharpenRatio = this._input.analogH.value;
 
     for (let i = 0; i < this._initialOptions.composePixelCount; i++) {
-      this._ring.g.compose[i * 3 + 0] -= this._ring.stat.ingear[i * 3 + 0] * sharpenRatio;
-      this._ring.g.compose[i * 3 + 1] -= this._ring.stat.ingear[i * 3 + 1] * sharpenRatio;
-      this._ring.g.compose[i * 3 + 2] -= this._ring.stat.ingear[i * 3 + 2] * sharpenRatio;
+      this._ring.g.compose[i * 3 + 0] -= this._ring.g.ingear[i * 3 + 0] * sharpenRatio;
+      this._ring.g.compose[i * 3 + 1] -= this._ring.g.ingear[i * 3 + 1] * sharpenRatio;
+      this._ring.g.compose[i * 3 + 2] -= this._ring.g.ingear[i * 3 + 2] * sharpenRatio;
       this._ring.g.compose[i * 3 + 0] *= 1 + 1 * sharpenRatio;
       this._ring.g.compose[i * 3 + 1] *= 1 + 1 * sharpenRatio;
       this._ring.g.compose[i * 3 + 2] *= 1 + 1 * sharpenRatio;  
     }
 
   }
-  _createOutputPixels() {
-    let masterPixels = new Array(this._initialOptions.masterPixelCount * 3);
+  _updateOutputBuffer() {
     for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
-      masterPixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._ring.g.master[i * 3 + 0] * 256)));
-      masterPixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._ring.g.master[i * 3 + 1] * 256)));
-      masterPixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._ring.g.master[i * 3 + 2] * 256)));
+      this._ring.outputBuffer.master[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._ring.g.master[i * 3 + 0] * 256)));
+      this._ring.outputBuffer.master[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._ring.g.master[i * 3 + 1] * 256)));
+      this._ring.outputBuffer.master[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._ring.g.master[i * 3 + 2] * 256)));
     }
 
-    let composePixels = new Array(this._initialOptions.composePixelCount * 3);
     for (let i = 0; i < this._initialOptions.composePixelCount; i++) {
-      composePixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 0] * 256)));
-      composePixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 1] * 256)));
-      composePixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 2] * 256)));
+      this._ring.outputBuffer.compose[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 0] * 256)));
+      this._ring.outputBuffer.compose[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 1] * 256)));
+      this._ring.outputBuffer.compose[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 2] * 256)));
     }
     
-    let flowPixels = new Array(this._initialOptions.masterPixelCount * 3);
     for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
-      flowPixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(         this._ring.ph.flow[i] / 1000 * 256)));
-      flowPixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(     1 - this._ring.ph.flow[i] / 1000  * 256)));
-      flowPixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(Math.abs(this._ring.ph.flow[i]) / 1000  * 256)));
+      this._ring.outputBuffer.flow[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(         this._ring.ph.flow[i] / 1000 * 256)));
+      this._ring.outputBuffer.flow[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(     1 - this._ring.ph.flow[i] / 1000  * 256)));
+      this._ring.outputBuffer.flow[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(Math.abs(this._ring.ph.flow[i]) / 1000  * 256)));
     }
 
-    let ingearPixels = new Array(this._initialOptions.composePixelCount * 3);
     for (let i = 0; i < this._initialOptions.composePixelCount; i++) { 
-      ingearPixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._ring.stat.ingear[i * 3 + 0] * 256)));
-      ingearPixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._ring.stat.ingear[i * 3 + 1] * 256)));
-      ingearPixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._ring.stat.ingear[i * 3 + 2] * 256)));
+      this._ring.outputBuffer.ingear[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._ring.g.ingear[i * 3 + 0] * 256)));
+      this._ring.outputBuffer.ingear[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._ring.g.ingear[i * 3 + 1] * 256)));
+      this._ring.outputBuffer.ingear[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._ring.g.ingear[i * 3 + 2] * 256)));
     }
     
-    let heatPixels = new Array(this._initialOptions.composePixelCount * 3);
     for (let i = 0; i < this._initialOptions.composePixelCount; i++) { 
-      heatPixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._limiter._heatRing[i * 3 + 0] * 256)));
-      heatPixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._limiter._heatRing[i * 3 + 1] * 256)));
-      heatPixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._limiter._heatRing[i * 3 + 2] * 256)));
+      this._ring.outputBuffer.heat[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._limiter._heatRing[i * 3 + 0] * 256)));
+      this._ring.outputBuffer.heat[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._limiter._heatRing[i * 3 + 1] * 256)));
+      this._ring.outputBuffer.heat[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._limiter._heatRing[i * 3 + 2] * 256)));
     }
-    return {master: masterPixels, compose: composePixels, flow: flowPixels, ingear: ingearPixels, heat: heatPixels};
   }
-  _emitPixels(renderedPixelsset) {
-    this._runtimeOptions.databus.emit('rendered', renderedPixelsset);
+  _emitOutputBuffer() {
+    let rendered = {
+      master: this._ring.outputBuffer.master,
+      compose: this._ring.outputBuffer.compose,
+      flow: this._ring.outputBuffer.flow,
+      ingear: this._ring.outputBuffer.ingear,
+      heat: this._ring.outputBuffer.heat
+    };
+    this._runtimeOptions.databus.emit('rendered', rendered);
   }
 }
 
