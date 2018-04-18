@@ -25,6 +25,7 @@ class AbstractiveIterativeRenderer extends OptionizedCorecofigured {
   constructor (initialOptions, runtimeOptions) {
     super(initialOptions, runtimeOptions);
     this._construct();
+    this._reset();
     setInterval(() => { this._iteration(); }, 1000 / this._initialOptions.fps);    
   }
   
@@ -32,7 +33,6 @@ class AbstractiveIterativeRenderer extends OptionizedCorecofigured {
     this._iter = {
       // keys and zero values will be filled in _resetIter() via _reset()
     }
-    this._reset();
   }
   _reset() {
     this._resetIter();
@@ -95,8 +95,7 @@ class AbstractiveIterativeRenderer extends OptionizedCorecofigured {
   _iteration() {
     this._updateIterTime();
     this._liveIterStamp();
-   
   }
 }
 
-module.exports = AbstractiveIterativeRenderer;
+export default AbstractiveIterativeRenderer;
