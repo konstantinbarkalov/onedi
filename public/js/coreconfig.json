@@ -100,14 +100,19 @@
       },
       "momentaryB": {
         "type": "momentary",
-        "label": "base strobe",
+        "label": "zig-scratch",
         "initialValue": false
       },
       "momentaryC": {
         "type": "momentary",
-        "label": "zig-scratch",
+        "label": "analog strobe",
         "initialValue": false
-      }
+      },
+      "momentaryD": {
+        "type": "momentary",
+        "label": "digital strobe",
+        "initialValue": false
+      },
     },
     "output": {
       "statusledA": {

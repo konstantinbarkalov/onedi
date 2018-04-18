@@ -1,6 +1,6 @@
 'use strict';
 // ES6
-import OptionizedCorecofigured from './optionizedCorecofigured.js';
+import OptionizedCorecofigured from './../optionizedCorecofigured.js';
 
 class Limiter extends OptionizedCorecofigured {
   static get _defaultInitialOptions() {

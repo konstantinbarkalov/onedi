@@ -2,7 +2,7 @@
 
 // ES6
 import IonicaServer from './ionicaServer.js';
-import Renderer from './renderer.js';
+import Renderer from './renderer';
 
 function anchor1({databus, iobus}) {
   let ionicaServer = new IonicaServer({iobus: iobus});

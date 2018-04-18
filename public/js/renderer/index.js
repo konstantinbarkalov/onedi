@@ -1,15 +1,18 @@
 'use strict';
 // ES6
 import Limiter from './limiter.js';
-import OptionizedCorecofigured from './optionizedCorecofigured.js';
+import OptionizedCorecofigured from './../optionizedCorecofigured.js';
+import Helper from './helper.js';
 
+let safemod = Helper.safemod;
 class Renderer extends OptionizedCorecofigured {
   static get _defaultInitialOptions() {
     return {
       ionica: null,
       particDynasMaxCount: 2048,
-      particFatsMaxCount: 4,
+      particFatsMaxCount: 8,
       particHeroesMaxCount: 1,
+      fps: 60,
     }
   }
   static get _defaultRuntimeOptions() {
@@ -38,7 +41,7 @@ class Renderer extends OptionizedCorecofigured {
   constructor (initialOptions, runtimeOptions) {
     super(initialOptions, runtimeOptions);
     this._construct();
-    setInterval(() => { this._iteration(); }, 20);    
+    setInterval(() => { this._iteration(); }, 1000 / this._initialOptions.fps);    
   }
   
   _construct() {
@@ -48,14 +51,14 @@ class Renderer extends OptionizedCorecofigured {
     this._input = this._initialOptions.ionica._input;
     this._ring = {
       g: {
-        master: new Float32Array(this._runtimeOptions.masterPixelCount * 3),
-        compose: new Float32Array(this._runtimeOptions.composePixelCount * 3),
+        master: new Float32Array(this._initialOptions.masterPixelCount * 3),
+        compose: new Float32Array(this._initialOptions.composePixelCount * 3),
       },
       ph: {
-        flow: new Float32Array(this._runtimeOptions.masterPixelCount),
+        flow: new Float32Array(this._initialOptions.masterPixelCount),
       },
       stat: {
-        ingear: new Float32Array(this._runtimeOptions.composePixelCount * 3),
+        ingear: new Float32Array(this._initialOptions.composePixelCount * 3),
       },
     }
 
@@ -109,9 +112,7 @@ class Renderer extends OptionizedCorecofigured {
   _liveIterStamp() {
     this._iter.loopstampVel = this._runtimeOptions.bpm / 60 / this._runtimeOptions.beatPerLoop;   
     this._iter.loopstampPos += this._iter.dt * this._iter.loopstampVel;
-    this._iter.loopstampPos %= 1;
-    this._iter.loopstampPos += 1;
-    this._iter.loopstampPos %= 1;
+    this._iter.loopstampPos = safemod(this._iter.loopstampPos, 1);
     
     this._iter.beatstampPos = this._iter.loopstampPos * this._runtimeOptions.beatPerLoop % 1;
     this._iter.beatstampVel = this._iter.loopstampVel * this._runtimeOptions.beatPerLoop;
@@ -122,10 +123,8 @@ class Renderer extends OptionizedCorecofigured {
     let a = Math.pow(2, bratio);
     this._iter.squeazeBeatstampPos = Math.pow(x, a);
     this._iter.squeazeBeatstampVel = a * Math.pow(x, a - 1);
-    this._iter.squeazeBeatstampPos %= 1;
-    this._iter.squeazeBeatstampPos += 1;
-    this._iter.squeazeBeatstampPos %= 1;
-  
+    this._iter.squeazeBeatstampPos = safemod(this._iter.squeazeBeatstampPos, 1);
+ 
     this._iter.fatHitstampPos = this._iter.loopstampPos * this._initialOptions.particFatsMaxCount % 1;
     this._iter.fatHitstampVel = this._iter.loopstampVel * this._initialOptions.particFatsMaxCount;
 
@@ -140,9 +139,7 @@ class Renderer extends OptionizedCorecofigured {
     //this._iter.turnstampVel += (this._iter.squeazeBeatstampVel - this._iter.beatstampVel) / 12;      
     
     this._iter.turnstampPos += this._iter.dt * this._iter.turnstampVel;
-    this._iter.turnstampPos %= 1;
-    this._iter.turnstampPos += 1;
-    this._iter.turnstampPos %= 1;
+    this._iter.turnstampPos = safemod(this._iter.turnstampPos, 1);
   }
   _iteration() {
     this._updateIterTime();
@@ -168,8 +165,9 @@ class Renderer extends OptionizedCorecofigured {
     this._masterToCompose();
     //this._fillComposeDebug();
     
-      
+    this._drawOnComposeDigitalStrobe();  
     this._composeToIngear();
+    this._processComposeWithIngear();
     let renderedPixelsset = this._createOutputPixels();
     this._processLimiter(renderedPixelsset.compose);
     this._emitPixels(renderedPixelsset);
@@ -179,19 +177,19 @@ class Renderer extends OptionizedCorecofigured {
    this._limiter.process(composePixels, this._iter.dt, composePixels, {from: 0, to: 255});
   }
   _fillComposeDebug() {
-    for (let i = 0; i < this._runtimeOptions.composePixelCount * 3; i++) {
+    for (let i = 0; i < this._initialOptions.composePixelCount * 3; i++) {
       this._ring.g.compose[i] = 2;
     }
   }
   _fillMasterRandom() {
-    for (let i = 0; i < this._runtimeOptions.masterPixelCount; i++) {
+    for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
       this._ring.g.master[i * 3 + 0] = Math.random();
       this._ring.g.master[i * 3 + 1] = Math.random();
       this._ring.g.master[i * 3 + 2] = Math.random();
     }
   }
   _fillMasterBlack() {
-    for (let i = 0; i < this._runtimeOptions.masterPixelCount * 3; i++) {
+    for (let i = 0; i < this._initialOptions.masterPixelCount * 3; i++) {
       this._ring.g.master[i] = 0;
     }
   }
@@ -203,22 +201,22 @@ class Renderer extends OptionizedCorecofigured {
   _dimAndPumpFlow() {
     let dimFlowRatio = Math.pow(0.5, this._iter.dt);
     let pumpPower = (this._input.analogF.value - 0.5) * this._runtimeOptions.pumpMaxPower;
-    for (let i = 0; i < this._runtimeOptions.masterPixelCount; i++) {
+    for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
       // dim
       this._ring.ph.flow[i] *= dimFlowRatio;
       
       // pump
-      this._ring.ph.flow[i] += (1 - dimFlowRatio) * pumpPower * this._runtimeOptions.masterPixelCount
+      this._ring.ph.flow[i] += (1 - dimFlowRatio) * pumpPower * this._initialOptions.masterPixelCount
     }
       
   }
   _fillFlowBlack() {
-    for (let i = 0; i < this._runtimeOptions.masterPixelCount; i++) {
+    for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
       this._ring.g.master[i] = 0;
     }
   }
   _fillFlowRandom() {
-    for (let i = 0; i < this._runtimeOptions.masterPixelCount; i++) {
+    for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
       this._ring.ph.flow[i] = (Math.random() - 0.5) * 5000;
     }
   }
@@ -226,7 +224,7 @@ class Renderer extends OptionizedCorecofigured {
   _fillParticDynasRandom() {
     for (let i = 0; i < this._initialOptions.particDynasMaxCount; i++) {
       this._partic.dynas[i * 8 + 0] = Math.random() * this._runtimeOptions.particDynasAverageTtl * 2;
-      this._partic.dynas[i * 8 + 1] = Math.random() * this._runtimeOptions.masterPixelCount;
+      this._partic.dynas[i * 8 + 1] = Math.random() * this._initialOptions.masterPixelCount;
       this._partic.dynas[i * 8 + 2] = Math.random() - 0.5;
       this._partic.dynas[i * 8 + 3] = Math.random();
       this._partic.dynas[i * 8 + 4] = Math.random();
@@ -238,7 +236,7 @@ class Renderer extends OptionizedCorecofigured {
   _fillParticFatsRandom() {
     for (let i = 0; i < this._initialOptions.particFatsMaxCount; i++) {
       this._partic.fats[i * 6 + 0] = 0; //TODO drop
-      this._partic.fats[i * 6 + 1] = Math.random() * this._runtimeOptions.masterPixelCount;
+      this._partic.fats[i * 6 + 1] = Math.random() * this._initialOptions.masterPixelCount;
       this._partic.fats[i * 6 + 2] = (Math.random() - 0.5) * 500;
       this._partic.fats[i * 6 + 3] = Math.random();
       this._partic.fats[i * 6 + 4] = Math.random();
@@ -248,7 +246,7 @@ class Renderer extends OptionizedCorecofigured {
   _fillParticHeroesRandom() {
     for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
       this._partic.heroes[i * 6 + 0] = 0; //TODO drop
-      this._partic.heroes[i * 6 + 1] = Math.random() * this._runtimeOptions.masterPixelCount;
+      this._partic.heroes[i * 6 + 1] = Math.random() * this._initialOptions.masterPixelCount;
       this._partic.heroes[i * 6 + 2] = (Math.random() - 0.5) * 500;
       this._partic.heroes[i * 6 + 3] = Math.random();
       this._partic.heroes[i * 6 + 4] = Math.random();
@@ -259,16 +257,12 @@ class Renderer extends OptionizedCorecofigured {
   _liveParticFats() {
     for (let i = 0; i < this._initialOptions.particFatsMaxCount; i++) {
       let ttl = (this._iter.loopstampPos) - i / this._initialOptions.particFatsMaxCount; // shift per beat
-      ttl %= 1;
-      ttl += 1;
-      ttl %= 1;      
-      let vel = this._iter.turnstampVel * this._runtimeOptions.masterPixelCount;      
-      let pos = this._iter.turnstampPos * this._runtimeOptions.masterPixelCount;
+      ttl = safemod(ttl, 1);    
+      let vel = this._iter.turnstampVel * this._initialOptions.masterPixelCount;      
+      let pos = this._iter.turnstampPos * this._initialOptions.masterPixelCount;
        
-      pos += i / this._initialOptions.particFatsMaxCount * this._runtimeOptions.masterPixelCount; // shift per beat
-      pos %= this._runtimeOptions.masterPixelCount;
-      pos += this._runtimeOptions.masterPixelCount;
-      pos %= this._runtimeOptions.masterPixelCount;
+      pos += i / this._initialOptions.particFatsMaxCount * this._initialOptions.masterPixelCount; // shift per beat
+      pos = safemod(pos, this._initialOptions.masterPixelCount);
       
       this._partic.fats[i * 6 + 0] = ttl;
       this._partic.fats[i * 6 + 1] = pos;
@@ -277,20 +271,17 @@ class Renderer extends OptionizedCorecofigured {
   }
   _liveParticHeroes() {
     for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
-      let vel = this._iter.loopstampVel * this._runtimeOptions.masterPixelCount;      
-      let pos = this._iter.loopstampPos * this._runtimeOptions.masterPixelCount;
+      let vel = this._iter.loopstampVel * this._initialOptions.masterPixelCount;      
+      let pos = this._iter.loopstampPos * this._initialOptions.masterPixelCount;
       
-      vel += (0.5 - this._input.analogD.value) * (this._iter.squeazeBeatstampVel - this._iter.beatstampVel) * this._runtimeOptions.masterPixelCount;      
-      pos += (0.5 - this._input.analogD.value) * (this._iter.squeazeBeatstampPos - this._iter.beatstampPos) * this._runtimeOptions.masterPixelCount;
+      vel += (0.5 - this._input.analogD.value) * (this._iter.squeazeBeatstampVel - this._iter.beatstampVel) * this._initialOptions.masterPixelCount;      
+      pos += (0.5 - this._input.analogD.value) * (this._iter.squeazeBeatstampPos - this._iter.beatstampPos) * this._initialOptions.masterPixelCount;
      
-      vel += this._iter.turnstampVel * this._runtimeOptions.masterPixelCount;      
-      pos += this._iter.turnstampPos * this._runtimeOptions.masterPixelCount;
+      vel += this._iter.turnstampVel * this._initialOptions.masterPixelCount;      
+      pos += this._iter.turnstampPos * this._initialOptions.masterPixelCount;
 
 
-      
-      pos %= this._runtimeOptions.masterPixelCount;
-      pos += this._runtimeOptions.masterPixelCount;
-      pos %= this._runtimeOptions.masterPixelCount;
+      pos = safemod(pos, this._initialOptions.masterPixelCount);
       
       this._partic.heroes[i * 6 + 1] = pos;
       this._partic.heroes[i * 6 + 2] = vel;
@@ -337,9 +328,9 @@ class Renderer extends OptionizedCorecofigured {
   _explodeFlow(fatIndex) {
     let explodedFatPos = this._partic.fats[fatIndex * 6 + 1];
     
-    for (let i = 0; i <= this._runtimeOptions.masterPixelCount; i++) {
+    for (let i = 0; i <= this._initialOptions.masterPixelCount; i++) {
       let flow = this._ring.ph.flow[i];
-      let diffRatio = (explodedFatPos - i) / this._runtimeOptions.masterPixelCount; 
+      let diffRatio = (explodedFatPos - i) / this._initialOptions.masterPixelCount; 
       let flowExplodeRatio = ((diffRatio % 1) + 1) % 1 - 0.5;
       flow += flowExplodeRatio * this._runtimeOptions.flowBoomVel;
       this._ring.ph.flow[i] = flow;
@@ -348,7 +339,7 @@ class Renderer extends OptionizedCorecofigured {
 
   _liveParticDynas() {
     let timeFactor = 1;
-    if (this._input.momentaryC.value) {
+    if (this._input.momentaryB.value) {
       timeFactor = (this._iter.beatstampPos * 1 % 1 < 0.5)?1:-1;
     }
     let flowAffectRatio = 1 - Math.pow(0.25, this._iter.dt);        
@@ -366,10 +357,8 @@ class Renderer extends OptionizedCorecofigured {
         vel -= (vel - flowVel) * flowAffectRatio;
         
         pos += (vel * this._iter.dt) * timeFactor;
-        pos %= this._runtimeOptions.masterPixelCount;
-        pos += this._runtimeOptions.masterPixelCount;
-        pos %= this._runtimeOptions.masterPixelCount;
-
+        pos = safemod(pos, this._initialOptions.masterPixelCount);
+      
         
         this._partic.dynas[i * 8 + 0] = ttl;
         this._partic.dynas[i * 8 + 1] = pos;
@@ -400,7 +389,7 @@ class Renderer extends OptionizedCorecofigured {
 
   _drawOnMasterParticDynas() {
     let baseStrobeFactor = 0;
-    if (this._input.momentaryB.value) {
+    if (this._input.momentaryC.value) {
       baseStrobeFactor = (this._iter.beatstampPos * 2 % 1 > 0.75)?10:-1;
     }
     for (let i = 0; i < this._initialOptions.particDynasMaxCount; i++) {
@@ -494,19 +483,19 @@ class Renderer extends OptionizedCorecofigured {
     }
   }  
   _masterToCompose() {
-    let rescaleRate = this._runtimeOptions.masterPixelCount / this._runtimeOptions.composePixelCount;
+    let rescaleRate = this._initialOptions.masterPixelCount / this._initialOptions.composePixelCount;
     
     let blurFactor = 1;
     blurFactor += 12 * this._input.analogG.value;
     blurFactor += 12 * this._input.momentaryA.value;
-    if (this._input.momentaryC.value) {
+    if (this._input.momentaryB.value) {
       let zigScratchstampPos = this._iter.beatstampPos;
       let zigScratchRatio = Math.abs(zigScratchstampPos - 0.5) * 2;
       //console.log('zsr', zigScratchRatio);
       //blurFactor += 12 * Math.pow(10, zigScratchRatio);
     }
 
-    for (let i = 0; i < this._runtimeOptions.composePixelCount; i++) {
+    for (let i = 0; i < this._initialOptions.composePixelCount; i++) {
       let masterPos = i * rescaleRate;
  
       let masterHalfSize = rescaleRate * blurFactor; // dat BLURRNESS
@@ -516,7 +505,7 @@ class Renderer extends OptionizedCorecofigured {
       this._ring.g.compose[i * 3 + 1] = 0;
       this._ring.g.compose[i * 3 + 2] = 0;
       for (let ii = intMasterPosFrom; ii <= intMasterPosTo; ii++) {
-        let iim = (((ii % this._runtimeOptions.masterPixelCount) + this._runtimeOptions.masterPixelCount) % this._runtimeOptions.masterPixelCount);
+        let iim = (((ii % this._initialOptions.masterPixelCount) + this._initialOptions.masterPixelCount) % this._initialOptions.masterPixelCount);
         this._ring.g.compose[i * 3 + 0] += this._ring.g.master[iim * 3 + 0];
         this._ring.g.compose[i * 3 + 1] += this._ring.g.master[iim * 3 + 1];
         this._ring.g.compose[i * 3 + 2] += this._ring.g.master[iim * 3 + 2];
@@ -577,11 +566,36 @@ class Renderer extends OptionizedCorecofigured {
 
     }
   }
+  _drawOnComposeDigitalStrobe() {
+    let partsCount = 2;
+    if (this._input.momentaryD.value) {
+      let strobestamp = this._iter.beatstampPos * 4 % 1;
+      let strobeValue = (strobestamp > 0.5) ? 1 : -1;
+      let strobeLoopstampPos = (this._iter.loopstampPos * 4) % 1;
+      let strobingPartId = Math.floor(strobeLoopstampPos * partsCount);
+      for (let i = 0; i < this._initialOptions.composePixelCount; i++) {
+        let partId = Math.floor(i / this._initialOptions.composePixelCount * partsCount); 
+        if (partId === strobingPartId) {
+          // glow
+          this._ring.g.compose[i * 3 + 0] += strobeValue * 2;
+          this._ring.g.compose[i * 3 + 1] += strobeValue * 2;
+          this._ring.g.compose[i * 3 + 2] += strobeValue * 2;  
+        } else {
+          // dim
+          this._ring.g.compose[i * 3 + 0] += strobeValue * 2 - 2;
+          this._ring.g.compose[i * 3 + 1] += strobeValue * 2 - 2;
+          this._ring.g.compose[i * 3 + 2] += strobeValue * 2 - 2;  
+            
+        }
+      }
+    }
+  }  
+
   _composeToIngear() {
     let chillingRatio = Math.pow(0.5, this._iter.dt / 10);
     let gainingRatio = 1 - chillingRatio;
 
-    for (let i = 0; i < this._runtimeOptions.composePixelCount; i++) {
+    for (let i = 0; i < this._initialOptions.composePixelCount; i++) {
       this._ring.stat.ingear[i * 3 + 0] = 0;
       this._ring.stat.ingear[i * 3 + 1] = 0;
       this._ring.stat.ingear[i * 3 + 2] = 0;
@@ -590,7 +604,7 @@ class Renderer extends OptionizedCorecofigured {
       let intPosFrom = Math.floor(i - halfSize);
       let intPosTo = Math.floor(i + halfSize);
       for (let ii = intPosFrom; ii <= intPosTo; ii++) {
-        let iim = (((ii % this._runtimeOptions.composePixelCount) + this._runtimeOptions.composePixelCount) % this._runtimeOptions.composePixelCount);
+        let iim = (((ii % this._initialOptions.composePixelCount) + this._initialOptions.composePixelCount) % this._initialOptions.composePixelCount);
         this._ring.stat.ingear[i * 3 + 0] += this._ring.g.compose[iim * 3 + 0];
         this._ring.stat.ingear[i * 3 + 1] += this._ring.g.compose[iim * 3 + 1];
         this._ring.stat.ingear[i * 3 + 2] += this._ring.g.compose[iim * 3 + 2];  
@@ -600,10 +614,12 @@ class Renderer extends OptionizedCorecofigured {
       this._ring.stat.ingear[i * 3 + 2] /= halfSize * 2;
 
     }
+  }
+  _processComposeWithIngear() {
     //let sharpenRatio = Math.max(0,Math.min(1,this._input.analogH.value));
     let sharpenRatio = this._input.analogH.value;
 
-    for (let i = 0; i < this._runtimeOptions.composePixelCount; i++) {
+    for (let i = 0; i < this._initialOptions.composePixelCount; i++) {
       this._ring.g.compose[i * 3 + 0] -= this._ring.stat.ingear[i * 3 + 0] * sharpenRatio;
       this._ring.g.compose[i * 3 + 1] -= this._ring.stat.ingear[i * 3 + 1] * sharpenRatio;
       this._ring.g.compose[i * 3 + 2] -= this._ring.stat.ingear[i * 3 + 2] * sharpenRatio;
@@ -611,38 +627,39 @@ class Renderer extends OptionizedCorecofigured {
       this._ring.g.compose[i * 3 + 1] *= 1 + 1 * sharpenRatio;
       this._ring.g.compose[i * 3 + 2] *= 1 + 1 * sharpenRatio;  
     }
-  } 
+
+  }
   _createOutputPixels() {
-    let masterPixels = new Array(this._runtimeOptions.masterPixelCount * 3);
-    for (let i = 0; i < this._runtimeOptions.masterPixelCount; i++) {
+    let masterPixels = new Array(this._initialOptions.masterPixelCount * 3);
+    for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
       masterPixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._ring.g.master[i * 3 + 0] * 256)));
       masterPixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._ring.g.master[i * 3 + 1] * 256)));
       masterPixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._ring.g.master[i * 3 + 2] * 256)));
     }
 
-    let composePixels = new Array(this._runtimeOptions.composePixelCount * 3);
-    for (let i = 0; i < this._runtimeOptions.composePixelCount; i++) {
+    let composePixels = new Array(this._initialOptions.composePixelCount * 3);
+    for (let i = 0; i < this._initialOptions.composePixelCount; i++) {
       composePixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 0] * 256)));
       composePixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 1] * 256)));
       composePixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 2] * 256)));
     }
     
-    let flowPixels = new Array(this._runtimeOptions.masterPixelCount * 3);
-    for (let i = 0; i < this._runtimeOptions.masterPixelCount; i++) {
+    let flowPixels = new Array(this._initialOptions.masterPixelCount * 3);
+    for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
       flowPixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(         this._ring.ph.flow[i] / 1000 * 256)));
       flowPixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(     1 - this._ring.ph.flow[i] / 1000  * 256)));
       flowPixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(Math.abs(this._ring.ph.flow[i]) / 1000  * 256)));
     }
 
-    let ingearPixels = new Array(this._runtimeOptions.composePixelCount * 3);
-    for (let i = 0; i < this._runtimeOptions.composePixelCount; i++) { 
+    let ingearPixels = new Array(this._initialOptions.composePixelCount * 3);
+    for (let i = 0; i < this._initialOptions.composePixelCount; i++) { 
       ingearPixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._ring.stat.ingear[i * 3 + 0] * 256)));
       ingearPixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._ring.stat.ingear[i * 3 + 1] * 256)));
       ingearPixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._ring.stat.ingear[i * 3 + 2] * 256)));
     }
     
-    let heatPixels = new Array(this._runtimeOptions.composePixelCount * 3);
-    for (let i = 0; i < this._runtimeOptions.composePixelCount; i++) { 
+    let heatPixels = new Array(this._initialOptions.composePixelCount * 3);
+    for (let i = 0; i < this._initialOptions.composePixelCount; i++) { 
       heatPixels[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._limiter._heatRing[i * 3 + 0] * 256)));
       heatPixels[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._limiter._heatRing[i * 3 + 1] * 256)));
       heatPixels[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._limiter._heatRing[i * 3 + 2] * 256)));

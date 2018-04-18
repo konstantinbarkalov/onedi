@@ -9,11 +9,21 @@ class Optionized {
   static get _defaultRuntimeOptions() {
     return {};
   }
+
+  // static get _defaultAndSuperInitialOptions() {
+  //   return Object.assign({}, this._defaultInitialOptions, super._defaultAndSuperInitialOptions);
+  // }
+  // static get _defaultAndSuperRuntimeOptions() {
+  //   return Object.assign({}, this._defaultRuntimeOptions, super._defaultAndSuperRuntimeOptions);
+  // }
+
   static _weldInitialOptionsWithDefault(initialOptions) {
+    // return Object.assign({}, this._defaultAndSuperInitialOptions, initialOptions);
     return Object.assign({}, this._defaultInitialOptions, initialOptions);
   }
 
   static _weldRuntimeOptionsWithDefault(runtimeOptions) {
+    // return Object.assign({}, this._defaultAndSuperRuntimeOptions, runtimeOptions);
     return Object.assign({}, this._defaultRuntimeOptions, runtimeOptions);
   }
 
@@ -32,6 +42,7 @@ class Optionized {
   }
 
   _constructOptions(initialOptions, runtimeOptions = initialOptions, lockOnConstruct = true) {
+    console.log('bbb');
     this._initialOptions = this.constructor._weldInitialOptionsWithDefault(initialOptions);
     if (lockOnConstruct) { this.constructor._lockInitialOptions(initialOptions); }
     // options, that are setted at init-time and expect to be read-only (unexpected to be changed at runtime)

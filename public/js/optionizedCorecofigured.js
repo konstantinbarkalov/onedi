@@ -34,8 +34,7 @@ class OptionizedCorecofigured extends Optionized {
     let coreconfigOptions = this._getCoreconfigInitialOptions(coreconfig, coreconfigKey);
     this._notifyDefaultOverrides(this._defaultInitialOptions, coreconfigOptions);
     this._warnCoreconfigOverrides(coreconfigOptions, initialOptions);
-    return Object.assign({}, this._defaultInitialOptions, coreconfigOptions, initialOptions);
-    // or same: return Optionized._weldInitialOptionsWithDefault(Object.assign({}, coreconfigOptions, initialOptions));
+    return super._weldInitialOptionsWithDefault(Object.assign({}, coreconfigOptions, initialOptions));
   }
 
 }
