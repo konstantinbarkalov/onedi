@@ -3,14 +3,14 @@
 import RingedRenderer from './ringedRenderer.js';
 
 class ParticedRenderer extends RingedRenderer {
-  static get _defaultInitialOptions() {
+  /* exptend */ static get _defaultInitialOptions() {
     return Object.assign({}, super._defaultInitialOptions, {
       particFatsMaxCount: 8,
       particHeroesMaxCount: 1,
     });
   }
     
-  _construct() {
+  /* exptend */ _construct() {
     super._construct();
     this._partic = {
       fats: new Float32Array(this._initialOptions.particFatsMaxCount * 6),
@@ -18,8 +18,8 @@ class ParticedRenderer extends RingedRenderer {
     }
   }
 
-  _reset() {
-    super._reset();
+  /* exptend */ _localReset() {
+    super._localReset();
     this._resetPartic();
   }
   _resetPartic() {

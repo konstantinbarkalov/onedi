@@ -1,8 +1,8 @@
 'use strict';
 // ES6
-import AbstractIterativeRenderer from './abstractIterativeRenderer.js';
+import MomentoRenderer from './momentoRenderer';
 
-class RingedRenderer extends AbstractIterativeRenderer {
+class RingedRenderer extends MomentoRenderer {
 
   static _getCoreconfigInitialOptions(coreconfig, coreconfigKey) {
     return {
@@ -11,7 +11,7 @@ class RingedRenderer extends AbstractIterativeRenderer {
     }
   }
   
-  _construct() {
+  /* exptend */ _construct() {
     super._construct();
     this._ring = {
       g: {
@@ -32,10 +32,9 @@ class RingedRenderer extends AbstractIterativeRenderer {
     }
   }
 
-  _reset() {
-    super._reset();
+  /* exptend */ _localReset() {
+    super._localReset();
     this._resetRing();
-    // this._limiter.reset(); // uncomment if need
   }
   _resetRing() {
     this._fillMasterBlack();

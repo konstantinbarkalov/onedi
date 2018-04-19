@@ -99,10 +99,10 @@ class Renderer extends ParticedRenderer {
   _processLimiter() {
     let outputBufferputCompose = this._ring.outputBuffer.compose;
     this._limiter.bypass = !this._input.switchB.value;  
-    this._limiter.process(outputBufferputCompose, this._iter.dt, outputBufferputCompose, {from: 0, to: 255});
+    this._limiter.process(outputBufferputCompose, this._momento.dt, outputBufferputCompose, {from: 0, to: 255});
   }
   _dimAndPumpFlow() {
-    let dimFlowRatio = Math.pow(0.5, this._iter.dt);
+    let dimFlowRatio = Math.pow(0.5, this._momento.dt);
     let pumpPower = (this._input.analogF.value - 0.5) * this._runtimeOptions.pumpMaxPower;
     for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
       // dim
@@ -116,10 +116,10 @@ class Renderer extends ParticedRenderer {
 
   _liveParticFats() {
     for (let i = 0; i < this._initialOptions.particFatsMaxCount; i++) {
-      let ttl = (this._iter.loopstampPos) - i / this._initialOptions.particFatsMaxCount; // shift per beat
+      let ttl = (this._momento.loopstampPos) - i / this._initialOptions.particFatsMaxCount; // shift per beat
       ttl = safemod(ttl, 1);    
-      let vel = this._iter.turnstampVel * this._initialOptions.masterPixelCount;      
-      let pos = this._iter.turnstampPos * this._initialOptions.masterPixelCount;
+      let vel = this._momento.turnstampVel * this._initialOptions.masterPixelCount;      
+      let pos = this._momento.turnstampPos * this._initialOptions.masterPixelCount;
        
       pos += i / this._initialOptions.particFatsMaxCount * this._initialOptions.masterPixelCount; // shift per beat
       pos = safemod(pos, this._initialOptions.masterPixelCount);
@@ -131,14 +131,14 @@ class Renderer extends ParticedRenderer {
   }
   _liveParticHeroes() {
     for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
-      let vel = this._iter.loopstampVel * this._initialOptions.masterPixelCount;      
-      let pos = this._iter.loopstampPos * this._initialOptions.masterPixelCount;
+      let vel = this._momento.loopstampVel * this._initialOptions.masterPixelCount;      
+      let pos = this._momento.loopstampPos * this._initialOptions.masterPixelCount;
       
-      vel += (0.5 - this._input.analogD.value) * (this._iter.squeazeBeatstampVel - this._iter.beatstampVel) * this._initialOptions.masterPixelCount;      
-      pos += (0.5 - this._input.analogD.value) * (this._iter.squeazeBeatstampPos - this._iter.beatstampPos) * this._initialOptions.masterPixelCount;
+      vel += (0.5 - this._input.analogD.value) * (this._momento.squeazeBeatstampVel - this._momento.beatstampVel) * this._initialOptions.masterPixelCount;      
+      pos += (0.5 - this._input.analogD.value) * (this._momento.squeazeBeatstampPos - this._momento.beatstampPos) * this._initialOptions.masterPixelCount;
      
-      vel += this._iter.turnstampVel * this._initialOptions.masterPixelCount;      
-      pos += this._iter.turnstampPos * this._initialOptions.masterPixelCount;
+      vel += this._momento.turnstampVel * this._initialOptions.masterPixelCount;      
+      pos += this._momento.turnstampPos * this._initialOptions.masterPixelCount;
 
 
       pos = safemod(pos, this._initialOptions.masterPixelCount);
@@ -149,13 +149,13 @@ class Renderer extends ParticedRenderer {
   }
   
   _liveAndDrawOnFlowExplodes() {
-    let nowFatInt = Math.floor(this._iter.loopstampPos * this._initialOptions.particFatsMaxCount);
-    let prevFatInt = Math.floor(this._iter.previousExplodeToParticDynasloopstamp * this._initialOptions.particFatsMaxCount);
+    let nowFatInt = Math.floor(this._momento.loopstampPos * this._initialOptions.particFatsMaxCount);
+    let prevFatInt = Math.floor(this._momento.previousExplodeToParticDynasloopstamp * this._initialOptions.particFatsMaxCount);
     if (nowFatInt != prevFatInt) {
       this._explodeParticFat(nowFatInt);
       this._explodeFlow(nowFatInt);
     }
-    this._iter.previousExplodeToParticDynasloopstamp = this._iter.loopstampPos; 
+    this._momento.previousExplodeToParticDynasloopstamp = this._momento.loopstampPos; 
   }
   
   _explodeParticFat(fatIndex) {
@@ -164,7 +164,7 @@ class Renderer extends ParticedRenderer {
     let r = this._partic.fats[fatIndex * 6 + 3];
     let g = this._partic.fats[fatIndex * 6 + 4];
     let b = this._partic.fats[fatIndex * 6 + 5];
-    console.log('boom lp, fatIndex, rgb', this._iter.loopstampPos, fatIndex, r,g,b);
+    console.log('boom lp, fatIndex, rgb', this._momento.loopstampPos, fatIndex, r,g,b);
     for (let i = 0; i < this._runtimeOptions.particDynasBoomCount; i++) {
       let spawnedparticdynasindex = Math.floor(Math.random() * this._initialOptions.particDynasMaxCount)
       // todo: smart grave
@@ -200,23 +200,23 @@ class Renderer extends ParticedRenderer {
   _liveParticDynas() {
     let timeFactor = 1;
     if (this._input.momentaryB.value) {
-      timeFactor = (this._iter.beatstampPos * 1 % 1 < 0.5)?1:-1;
+      timeFactor = (this._momento.beatstampPos * 1 % 1 < 0.5)?1:-1;
     }
-    let flowAffectRatio = 1 - Math.pow(0.25, this._iter.dt);        
+    let flowAffectRatio = 1 - Math.pow(0.25, this._momento.dt);        
     for (let i = 0; i < this._initialOptions.particDynasMaxCount; i++) {
       let ttl = this._partic.dynas[i * 8 + 0];
-      if (ttl > this._iter.dt) {
-        ttl -= this._iter.dt;
+      if (ttl > this._momento.dt) {
+        ttl -= this._momento.dt;
         let pos = this._partic.dynas[i * 8 + 1];
         let vel = this._partic.dynas[i * 8 + 2];
         let burnTtl = this._partic.dynas[i * 8 + 6];
-        burnTtl -= this._iter.dt;
+        burnTtl -= this._momento.dt;
         burnTtl = Math.max(0, burnTtl);
         let intPos = Math.floor(pos);
         let flowVel = this._ring.ph.flow[intPos];
         vel -= (vel - flowVel) * flowAffectRatio;
         
-        pos += (vel * this._iter.dt) * timeFactor;
+        pos += (vel * this._momento.dt) * timeFactor;
         pos = safemod(pos, this._initialOptions.masterPixelCount);
       
         
@@ -250,7 +250,7 @@ class Renderer extends ParticedRenderer {
   _drawOnMasterParticDynas() {
     let baseStrobeFactor = 0;
     if (this._input.momentaryC.value) {
-      baseStrobeFactor = (this._iter.beatstampPos * 2 % 1 > 0.75)?10:-1;
+      baseStrobeFactor = (this._momento.beatstampPos * 2 % 1 > 0.75)?10:-1;
     }
     for (let i = 0; i < this._initialOptions.particDynasMaxCount; i++) {
       let ttl = this._partic.dynas[i * 8 + 0];
@@ -292,7 +292,7 @@ class Renderer extends ParticedRenderer {
   }  
 
   _drawOnFlowParticFats() {
-    let dimFlowRatio = Math.pow(0.5, this._iter.dt);
+    let dimFlowRatio = Math.pow(0.5, this._momento.dt);
     for (let i = 0; i < this._initialOptions.particFatsMaxCount; i++) {
       let pos = this._partic.fats[i * 6 + 1];
       let vel = this._partic.fats[i * 6 + 2];
@@ -328,7 +328,7 @@ class Renderer extends ParticedRenderer {
   }  
 
   _drawOnFlowParticHeroes() {
-    let dimFlowRatio = Math.pow(0.5, this._iter.dt);
+    let dimFlowRatio = Math.pow(0.5, this._momento.dt);
     for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
       let pos = this._partic.heroes[i * 6 + 1];
       let vel = this._partic.heroes[i * 6 + 2];
@@ -349,7 +349,7 @@ class Renderer extends ParticedRenderer {
     blurFactor += 12 * this._input.analogG.value;
     blurFactor += 12 * this._input.momentaryA.value;
     if (this._input.momentaryB.value) {
-      let zigScratchstampPos = this._iter.beatstampPos;
+      let zigScratchstampPos = this._momento.beatstampPos;
       let zigScratchRatio = Math.abs(zigScratchstampPos - 0.5) * 2;
       //console.log('zsr', zigScratchRatio);
       //blurFactor += 12 * Math.pow(10, zigScratchRatio);
@@ -429,9 +429,9 @@ class Renderer extends ParticedRenderer {
   _drawOnComposeDigitalStrobe() {
     let partsCount = 2;
     if (this._input.momentaryD.value) {
-      let strobestamp = this._iter.beatstampPos * 4 % 1;
+      let strobestamp = this._momento.beatstampPos * 4 % 1;
       let strobeValue = (strobestamp > 0.5) ? 1 : -1;
-      let strobeLoopstampPos = (this._iter.loopstampPos * 4) % 1;
+      let strobeLoopstampPos = (this._momento.loopstampPos * 4) % 1;
       let strobingPartId = Math.floor(strobeLoopstampPos * partsCount);
       for (let i = 0; i < this._initialOptions.composePixelCount; i++) {
         let partId = Math.floor(i / this._initialOptions.composePixelCount * partsCount); 
@@ -452,7 +452,7 @@ class Renderer extends ParticedRenderer {
   }  
 
   _composeToIngear() {
-    let chillingRatio = Math.pow(0.5, this._iter.dt / 10);
+    let chillingRatio = Math.pow(0.5, this._momento.dt / 10);
     let gainingRatio = 1 - chillingRatio;
 
     for (let i = 0; i < this._initialOptions.composePixelCount; i++) {

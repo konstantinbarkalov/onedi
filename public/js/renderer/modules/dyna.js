@@ -1,7 +1,7 @@
 'use strict';
 
 // ES6
-import Helper from './helper.js';
+import Helper from './../helper.js';
 let safemod = Helper.safemod;
 
 
@@ -14,46 +14,49 @@ class Dyna extends AbstractRendererModule {
       particDynasMaxCount: 2048,
     });
   }
-  
   static get _defaultRuntimeOptions() {
     return Object.assign({}, super._defaultRuntimeOptions, {
       particDynasBoomCount: 512,
       particDynasBoomVel: 1500,
       particDynasAverageTtl: 10,
       particDynasBurnTtl: 5,
-      particDynasBaseBrightness: 0.0,
+      particDynasBaseBrightness: 0.1,
       burnBornMultiplier: 10,
       burnDieMultiplier: 1 / 10,
     });
   }
-  
   static _getCoreconfigInitialOptions(coreconfig, coreconfigKey) {
     return Object.assign({}, super._getCoreconfigInitialOptions(coreconfig, coreconfigKey), {
-      particDynasMaxCount: coreconfig.renderer.dyna.master.particsMaxCount, 
+      particDynasMaxCount: coreconfig.renderer.dyna.particsMaxCount, 
     });
   }
-  
-  constructor(initialOptions, runtimeOptions) {
-    super(initialOptions, runtimeOptions);
+  /* override */ _construct() {
+    super._construct();
     this._partics = new Float32Array(this._initialOptions.particDynasMaxCount * 8);
-    
   }
-  /* implement */ reset() {
+  /* API implement */ reset() {
     this._fillParticDynasRandom();  
   }
-  /* implement */ live() {
+  /* API implement */ prepare() {
+    return  
+  }
+  /* API implement */ live() {
     this._liveParticDynas();        
   }
-  /* implement */ draw() {
+  /* API implement */ draw() {
     this._drawOnMasterParticDynas();    
   }
-  /* implement */ explode(explodes) {
+  /* API implement */ postdraw() {
+    return;    
+  }
+  /* API implement */ explode(explodes) {
+    return;
     // TODO    
   }
   _fillParticDynasRandom() {
     for (let i = 0; i < this._initialOptions.particDynasMaxCount; i++) {
       this._partics[i * 8 + 0] = Math.random() * this._runtimeOptions.particDynasAverageTtl * 2;
-      this._partics[i * 8 + 1] = Math.random() * this._initialOptions.masterPixelCount;
+      this._partics[i * 8 + 1] = Math.random() * this._rendererInitialOptions.masterPixelCount;
       this._partics[i * 8 + 2] = Math.random() - 0.5;
       this._partics[i * 8 + 3] = Math.random();
       this._partics[i * 8 + 4] = Math.random();
@@ -62,16 +65,15 @@ class Dyna extends AbstractRendererModule {
       this._partics[i * 8 + 7] = Math.random(); // entropy
     }
   }
-
   _explodeParticFat(fatIndex) {
     let pos = this._partic.fats[fatIndex * 6 + 1];
     let vel = this._partic.fats[fatIndex * 6 + 2];
     let r = this._partic.fats[fatIndex * 6 + 3];
     let g = this._partic.fats[fatIndex * 6 + 4];
     let b = this._partic.fats[fatIndex * 6 + 5];
-    console.log('boom lp, fatIndex, rgb', this._iter.loopstampPos, fatIndex, r,g,b);
+    console.log('boom lp, fatIndex, rgb', this._momento.loopstampPos, fatIndex, r,g,b);
     for (let i = 0; i < this._runtimeOptions.particDynasBoomCount; i++) {
-      let spawnedparticdynasindex = Math.floor(Math.random() * this._rendererInitialOptions.particDynasMaxCount)
+      let spawnedparticdynasindex = Math.floor(Math.random() * this._initialOptions.particDynasMaxCount)
       // todo: smart grave
       let dynaTtl = Math.random() * this._runtimeOptions.particDynasAverageTtl * 2;
       let dynaPos = pos;
@@ -90,27 +92,26 @@ class Dyna extends AbstractRendererModule {
       this._partics[spawnedparticdynasindex * 8 + 6] = dynaBurnTtl;
     }
   }  
-
   _liveParticDynas() {
     let timeFactor = 1;
     if (this._input.momentaryB.value) {
-      timeFactor = (this._iter.beatstampPos * 1 % 1 < 0.5)?1:-1;
+      timeFactor = (this._momento.beatstampPos * 1 % 1 < 0.5)?1:-1;
     }
-    let flowAffectRatio = 1 - Math.pow(0.25, this._iter.dt);        
-    for (let i = 0; i < this._rendererInitialOptions.particDynasMaxCount; i++) {
+    let flowAffectRatio = 1 - Math.pow(0.25, this._momento.dt);        
+    for (let i = 0; i < this._initialOptions.particDynasMaxCount; i++) {
       let ttl = this._partics[i * 8 + 0];
-      if (ttl > this._iter.dt) {
-        ttl -= this._iter.dt;
+      if (ttl > this._momento.dt) {
+        ttl -= this._momento.dt;
         let pos = this._partics[i * 8 + 1];
         let vel = this._partics[i * 8 + 2];
         let burnTtl = this._partics[i * 8 + 6];
-        burnTtl -= this._iter.dt;
+        burnTtl -= this._momento.dt;
         burnTtl = Math.max(0, burnTtl);
         let intPos = Math.floor(pos);
         let flowVel = this._ring.ph.flow[intPos];
         vel -= (vel - flowVel) * flowAffectRatio;
         
-        pos += (vel * this._iter.dt) * timeFactor;
+        pos += (vel * this._momento.dt) * timeFactor;
         pos = safemod(pos, this._rendererInitialOptions.masterPixelCount);
       
         
@@ -140,13 +141,12 @@ class Dyna extends AbstractRendererModule {
     let burnBornBrightnessFactor = 1 / burnInvRatio; 
     return burnBornBrightnessFactor;    
   }
-
   _drawOnMasterParticDynas() {
     let baseStrobeFactor = 0;
     if (this._input.momentaryC.value) {
-      baseStrobeFactor = (this._iter.beatstampPos * 2 % 1 > 0.75)?10:-1;
+      baseStrobeFactor = (this._momento.beatstampPos * 2 % 1 > 0.75)?10:-1;
     }
-    for (let i = 0; i < this._rendererInitialOptions.particDynasMaxCount; i++) {
+    for (let i = 0; i < this._initialOptions.particDynasMaxCount; i++) {
       let ttl = this._partics[i * 8 + 0];
       let pos = this._partics[i * 8 + 1];
       let vel = this._partics[i * 8 + 2];
