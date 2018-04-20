@@ -1,11 +1,11 @@
 'use strict';
 // ES6
-import AbstractIterativeRenderer from './abstractIterativeRenderer.js';
+import IonizedRenderer from './ionizedRenderer';
 import Helper from './../helper.js';
 import { EventEmitter } from 'events';
 
 let safemod = Helper.safemod;
-class MomentoRenderer extends AbstractIterativeRenderer {
+class MomentoRenderer extends IonizedRenderer {
   
   /* extend */ static get _defaultInitialOptions() {
     return Object.assign({}, super._defaultInitialOptions, {
@@ -13,14 +13,17 @@ class MomentoRenderer extends AbstractIterativeRenderer {
         ...super._defaultInitialOptions.iterationSteps,
         'momento',
       ],
+      beatsPerSquare: 16,
     });
   }
 
   static get _defaultRuntimeOptions() {
-    return {
-      beatPerLoop: 8,
+    return Object.assign({}, super._defaultRuntimeOptions, {
+      beatsPerLoop: 8,
+      beatsPerJump: 1,
+      beatsPerHit: 2,
       bpm: 120,
-    }
+    });
   }
 
   _construct() {
@@ -31,21 +34,29 @@ class MomentoRenderer extends AbstractIterativeRenderer {
   }
 
   _resetMomento(){
-    this._momento.loopstampPos = 0;
-    this._momento.loopstampVel = 0;
- 
-    this._momento.beatstampPos = 0;
-    this._momento.beatstampVel = 0;
-    this._momento.fatHitstampPos = 0;
-    this._momento.fatHitstampVel = 0;
-    this._momento.squeazeBeatstampPos = 0;
-    this._momento.squeazeBeatstampVel = 0;
-    
+    this._momento.squareStampPos = 0;
+    this._momento.squareStampVel = 0;
 
-    this._momento.turnstampPos = 0;
-    this._momento.turnstampVel = 0;
-    this._momento.previousExplodeToParticHeroesloopstamp = 0;
-    this._momento.previousExplodeToParticFatsloopstamp = 0;
+    this._momento.loopStampPos = 0;
+    this._momento.loopStampVel = 0;
+ 
+    this._momento.beatStampPos = 0;
+    this._momento.beatStampVel = 0;
+    this._momento.squeazeBeatStampPos = 0;
+    this._momento.squeazeBeatStampVel = 0;
+    this._momento.hitStampPos = 0;
+    this._momento.hitStampVel = 0;
+    this._momento.squeazeHitStampPos = 0;
+    this._momento.squeazeHitStampVel = 0;
+
+    this._momento.jumpStampPos = 0;
+    this._momento.jumpStampVel = 0;
+    this._momento.squeazeJumpStampPos = 0;
+    this._momento.squeazeJumpStampVel = 0;
+
+    this._momento.turnStampPos = 0;
+    this._momento.turnStampVel = 0;
+
   }
   _updateMomentoTime() {
     let t = Date.now() / 1000;
@@ -53,37 +64,50 @@ class MomentoRenderer extends AbstractIterativeRenderer {
     this._momento.t = t;
     this._momento.dt = dt || 50;
   }
-  _liveMomento() {
-    this._momento.loopstampVel = this._runtimeOptions.bpm / 60 / this._runtimeOptions.beatPerLoop;   
-    this._momento.loopstampPos += this._momento.dt * this._momento.loopstampVel;
-    this._momento.loopstampPos = safemod(this._momento.loopstampPos, 1);
+  _updateMomentoStamps() {
+    // square is master
+    this._momento.squareStampVel = this._runtimeOptions.bpm / 60 / this._initialOptions.beatsPerSquare;   
+    this._momento.squareStampPos += this._momento.dt * this._momento.squareStampVel;
+    this._momento.squareStampPos = safemod(this._momento.squareStampPos, 1);
     
-    this._momento.beatstampPos = this._momento.loopstampPos * this._runtimeOptions.beatPerLoop % 1;
-    this._momento.beatstampVel = this._momento.loopstampVel * this._runtimeOptions.beatPerLoop;
+    // slave stamps
+    this._momento.loopStampPos = this._momento.squareStampPos * this._initialOptions.beatsPerSquare / this._runtimeOptions.beatsPerLoop;
+    this._momento.loopStampVel = this._momento.squareStampVel * this._initialOptions.beatsPerSquare / this._runtimeOptions.beatsPerLoop;
+    this._momento.loopStampPos = safemod(this._momento.loopStampPos, 1);
     
-    // map linear beatstamp to squeaze ease
-    let x = this._momento.beatstampPos;
+    this._momento.beatStampPos = this._momento.squareStampPos * this._initialOptions.beatsPerSquare;
+    this._momento.beatStampVel = this._momento.squareStampVel * this._initialOptions.beatsPerSquare;
+    this._momento.beatStampPos = safemod(this._momento.beatStampPos, 1);
+
+    this._momento.jumpStampPos = this._momento.squareStampPos * this._initialOptions.beatsPerSquare / this._runtimeOptions.beatsPerJump;
+    this._momento.jumpStampVel = this._momento.squareStampVel * this._initialOptions.beatsPerSquare / this._runtimeOptions.beatsPerJump;
+    this._momento.jumpStampPos = safemod(this._momento.jumpStampPos, 1);
+
+    this._momento.hitStampPos = this._momento.squareStampPos * this._initialOptions.beatsPerSquare / this._runtimeOptions.beatsPerHit;
+    this._momento.hitStampVel = this._momento.squareStampVel * this._initialOptions.beatsPerSquare / this._runtimeOptions.beatsPerHit;
+    this._momento.hitStampPos = safemod(this._momento.hitStampPos, 1);
+
+    // map linear beatStamp to squeaze ease
+    let x = this._momento.beatStampPos;
     let bratio = 1 - this._input.analogE.value * 2;
     let a = Math.pow(2, bratio);
-    this._momento.squeazeBeatstampPos = Math.pow(x, a);
-    this._momento.squeazeBeatstampVel = a * Math.pow(x, a - 1);
-    this._momento.squeazeBeatstampPos = safemod(this._momento.squeazeBeatstampPos, 1);
+    this._momento.squeazeBeatStampPos = Math.pow(x, a);
+    this._momento.squeazeBeatStampVel = a * Math.pow(x, a - 1);
+    this._momento.squeazeBeatStampPos = safemod(this._momento.squeazeBeatStampPos, 1);
  
-    this._momento.fatHitstampPos = this._momento.loopstampPos * this._initialOptions.particFatsMaxCount % 1;
-    this._momento.fatHitstampVel = this._momento.loopstampVel * this._initialOptions.particFatsMaxCount;
 
 
-    let turnstampConstantVel = (this._input.analogA.value - 0.5) * 2;
-    let turnstampConstantSineVel = Math.sin(Date.now()/3000) * 0.1 * 0;
-    let turnstampSqueazeBeatSineVel = - (this._momento.squeazeBeatstampVel - this._momento.beatstampVel) * (this._input.analogC.value - 0.5);
+    let turnStampConstantVel = (this._input.analogA.value - 0.5) * 2;
+    let turnStampConstantSineVel = Math.sin(Date.now()/3000) * 0.1 * 0;
+    let turnStampSqueazeBeatSineVel = - (this._momento.squeazeBeatStampVel - this._momento.beatStampVel) * (this._input.analogC.value - 0.5);
   
     
-    this._momento.turnstampVel = turnstampConstantVel + turnstampConstantSineVel + turnstampSqueazeBeatSineVel;
+    this._momento.turnStampVel = turnStampConstantVel + turnStampConstantSineVel + turnStampSqueazeBeatSineVel;
    
-    //this._momento.turnstampVel += (this._momento.squeazeBeatstampVel - this._momento.beatstampVel) / 12;      
+    //this._momento.turnStampVel += (this._momento.squeazeBeatStampVel - this._momento.beatStampVel) / 12;      
     
-    this._momento.turnstampPos += this._momento.dt * this._momento.turnstampVel;
-    this._momento.turnstampPos = safemod(this._momento.turnstampPos, 1);
+    this._momento.turnStampPos += this._momento.dt * this._momento.turnStampVel;
+    this._momento.turnStampPos = safemod(this._momento.turnStampPos, 1);
   }
 
   /* declare */ _onKernelReset() {
@@ -93,8 +117,8 @@ class MomentoRenderer extends AbstractIterativeRenderer {
   /* declare */ _onKernelMomento() {
     //super._onKernelMomento();
     this._updateMomentoTime();
-    this._liveMomento();
+    this._updateMomentoStamps();
   }
 }
 
-export default MomentoRenderer;AbstractIterativeRenderer
+export default MomentoRenderer;

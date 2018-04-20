@@ -23,7 +23,9 @@ class AbstractRendererModule extends OptionizedCoreconfigured{
     this._ee = this._initialOptions.renderer.ee.module;
     this._input = this._initialOptions.renderer._input;
     this._momento = this._initialOptions.renderer._momento;
+    this._explodes = this._initialOptions.renderer._explodes;
     this._ring = this._initialOptions.renderer._ring;
+    // Shortcuted variables must support shortcutting - means keeping it's reference 
     this._rendererInitialOptions = this._initialOptions.renderer._initialOptions;
     this._rendererRuntimeOptions = this._runtimeOptions.renderer._runtimeOptions;
   }

@@ -13,7 +13,6 @@ let safemod = Helper.safemod;
 class Renderer extends ParticedRenderer {
   static get _defaultInitialOptions() {
     return Object.assign({}, super._defaultInitialOptions, {
-      ionica: null,
       particHeroesMaxCount: 1, // RingedRenderer based
       fps: 60,  // AbstractIterativeRenderer based
       iterationSteps: [
@@ -31,12 +30,8 @@ class Renderer extends ParticedRenderer {
   }
 
   _construct() {
-    if (!this._initialOptions.ionica) {
-      throw new Error('Instance of ionica is required for renderer to work');
-    }
     super._construct();
-    this._input = this._initialOptions.ionica._input;
-
+    
     //TODO limiter as a module
     this._limiter = new Limiter({coreconfigKey: this._runtimeOptions.coreconfigKey});
     
@@ -93,8 +88,8 @@ class Renderer extends ParticedRenderer {
     blurFactor += 12 * this._input.analogG.value;
     blurFactor += 12 * this._input.momentaryA.value;
     if (this._input.momentaryB.value) {
-      let zigScratchstampPos = this._momento.beatstampPos;
-      let zigScratchRatio = Math.abs(zigScratchstampPos - 0.5) * 2;
+      let zigScratchStampPos = this._momento.beatStampPos;
+      let zigScratchRatio = Math.abs(zigScratchStampPos - 0.5) * 2;
       //console.log('zsr', zigScratchRatio);
       //blurFactor += 12 * Math.pow(10, zigScratchRatio);
     }
@@ -173,10 +168,10 @@ class Renderer extends ParticedRenderer {
   _drawOnComposeDigitalStrobe() {
     let partsCount = 2;
     if (this._input.momentaryD.value) {
-      let strobestamp = this._momento.beatstampPos * 4 % 1;
-      let strobeValue = (strobestamp > 0.5) ? 1 : -1;
-      let strobeLoopstampPos = (this._momento.loopstampPos * 4) % 1;
-      let strobingPartId = Math.floor(strobeLoopstampPos * partsCount);
+      let strobeStamp = this._momento.beatStampPos * 4 % 1;
+      let strobeValue = (strobeStamp > 0.5) ? 1 : -1;
+      let strobeLoopStampPos = (this._momento.loopStampPos * 4) % 1;
+      let strobingPartId = Math.floor(strobeLoopStampPos * partsCount);
       for (let i = 0; i < this._initialOptions.composePixelCount; i++) {
         let partId = Math.floor(i / this._initialOptions.composePixelCount * partsCount); 
         if (partId === strobingPartId) {

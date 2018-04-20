@@ -7,8 +7,8 @@ class Watchdog extends OptionizedCoreconfigured {
     return {
       ask: 'status',
       await: 'status',
-      askTimestampDelta: 0,
-      awaitTimestampDelta: 1000
+      askTimeStampDelta: 0,
+      awaitTimeStampDelta: 1000
     }
   }
   static get _defaultRuntimeOptions() {
@@ -27,15 +27,15 @@ class Watchdog extends OptionizedCoreconfigured {
   }
   
   _constructTimer() {
-    if (this._initialOptions.askTimestampDelta) {
+    if (this._initialOptions.askTimeStampDelta) {
       let intervalId = setInterval(()=>{
         this._askIteration();
-      }, this._initialOptions.askTimestampDelta);
+      }, this._initialOptions.askTimeStampDelta);
     }
-    if (this._initialOptions.awaitTimestampDelta) {
+    if (this._initialOptions.awaitTimeStampDelta) {
       let intervalId = setInterval(()=>{
         this._awaitIteration();
-      }, this._initialOptions.awaitTimestampDelta);
+      }, this._initialOptions.awaitTimeStampDelta);
       
       this._initialOptions.bus.on(this._initialOptions.await, ()=>{
         this._awaitCallback();
@@ -48,9 +48,9 @@ class Watchdog extends OptionizedCoreconfigured {
   }
 
   _awaitIteration() {
-    let timestampDelta = Date.now() - this._runtimeOptions.lastTimestamp;
-    if (timestampDelta > this._initialOptions.awaitTimestampDelta) {
-      _alert(new Error(`Watchdog alert! No ${this._initialOptions.await} events heared for more than ${timestampDelta} mesc (${this._initialOptions.awaitTimestampDelta} msec max allowed)`));
+    let timeStampDelta = Date.now() - this._runtimeOptions.lastTimeStamp;
+    if (timeStampDelta > this._initialOptions.awaitTimeStampDelta) {
+      _alert(new Error(`Watchdog alert! No ${this._initialOptions.await} events heared for more than ${timeStampDelta} mesc (${this._initialOptions.awaitTimeStampDelta} msec max allowed)`));
     }
   }
   _alert(error) {
@@ -62,7 +62,7 @@ class Watchdog extends OptionizedCoreconfigured {
   }
 
   _awaitCallback() {
-    this._runtimeOptions.lastTimestamp = Date.now();
+    this._runtimeOptions.lastTimeStamp = Date.now();
   }
 }
 //let a = new Watchdog();

@@ -36,7 +36,7 @@ class Dyna extends AbstractRendererModule {
       
   }
   _liveExplode() {
-    let explodes = this._momento.explodes;
+    let explodes = this._explodes;
     explodes.forEach((explode) => {
      this._explodeFlow(explode);
     });

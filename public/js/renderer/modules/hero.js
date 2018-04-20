@@ -28,6 +28,7 @@ class Hero extends AbstractRendererModule {
   /* extend */ _construct() {
     super._construct();
     this._partics = new Float32Array(this._initialOptions.particHeroesMaxCount * 6);
+    this._previousExplodeToParticHeroesloopStamp = 0;
   }
   /* declare */ _onModuleReset() {
     this._fillParticHeroesRandom();  
@@ -53,10 +54,10 @@ class Hero extends AbstractRendererModule {
   }
   _liveParticHeroesFromClone() {
     for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
-      let ttl = (this._momento.loopstampPos) - i / this._initialOptions.particHeroesMaxCount; // shift per beat
+      let ttl = (this._momento.loopStampPos) - i / this._initialOptions.particHeroesMaxCount; // shift per beat
       ttl = safemod(ttl, 1);    
-      let vel = this._momento.turnstampVel * this._rendererInitialOptions.masterPixelCount;      
-      let pos = this._momento.turnstampPos * this._rendererInitialOptions.masterPixelCount;
+      let vel = this._momento.turnStampVel * this._rendererInitialOptions.masterPixelCount;      
+      let pos = this._momento.turnStampPos * this._rendererInitialOptions.masterPixelCount;
        
       pos += i / this._initialOptions.particHeroesMaxCount * this._rendererInitialOptions.masterPixelCount; // shift per beat
       pos = safemod(pos, this._rendererInitialOptions.masterPixelCount);
@@ -68,17 +69,17 @@ class Hero extends AbstractRendererModule {
   }
   _liveParticHeroes() {
     for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
-      let ttl = (this._momento.loopstampPos) - i / this._initialOptions.particHeroesMaxCount; // shift per beat
+      let ttl = (this._momento.loopStampPos) - i / this._initialOptions.particHeroesMaxCount; // shift per beat
       ttl *= 4;
       ttl = safemod(ttl, 1);    
-      let vel = this._momento.loopstampVel * this._rendererInitialOptions.masterPixelCount;      
-      let pos = this._momento.loopstampPos * this._rendererInitialOptions.masterPixelCount;
+      let vel = this._momento.loopStampVel * this._rendererInitialOptions.masterPixelCount;      
+      let pos = this._momento.loopStampPos * this._rendererInitialOptions.masterPixelCount;
       
-      vel += (0.5 - this._input.analogD.value) * (this._momento.squeazeBeatstampVel - this._momento.beatstampVel) * this._rendererInitialOptions.masterPixelCount;      
-      pos += (0.5 - this._input.analogD.value) * (this._momento.squeazeBeatstampPos - this._momento.beatstampPos) * this._rendererInitialOptions.masterPixelCount;
+      vel += (0.5 - this._input.analogD.value) * (this._momento.squeazeBeatStampVel - this._momento.beatStampVel) * this._rendererInitialOptions.masterPixelCount;      
+      pos += (0.5 - this._input.analogD.value) * (this._momento.squeazeBeatStampPos - this._momento.beatStampPos) * this._rendererInitialOptions.masterPixelCount;
       
-      vel += this._momento.turnstampVel * this._rendererInitialOptions.masterPixelCount;      
-      pos += this._momento.turnstampPos * this._rendererInitialOptions.masterPixelCount;
+      vel += this._momento.turnStampVel * this._rendererInitialOptions.masterPixelCount;      
+      pos += this._momento.turnStampPos * this._rendererInitialOptions.masterPixelCount;
       
       
       pos = safemod(pos, this._rendererInitialOptions.masterPixelCount);
@@ -89,12 +90,12 @@ class Hero extends AbstractRendererModule {
     }
   }
   _liveAndDrawOnFlowExplodes() {
-    let nowHeroInt = Math.floor(this._momento.loopstampPos * this._initialOptions.particHeroesMaxCount);
-    let prevHeroInt = Math.floor(this._momento.previousExplodeToParticHeroesloopstamp * this._initialOptions.particHeroesMaxCount);
+    let nowHeroInt = Math.floor(this._momento.loopStampPos * this._initialOptions.particHeroesMaxCount);
+    let prevHeroInt = Math.floor(this._previousExplodeToParticHeroesloopStamp * this._initialOptions.particHeroesMaxCount);
     if (nowHeroInt != prevHeroInt) {
       this._explodeParticHero(nowHeroInt);
     }
-    this._momento.previousExplodeToParticHeroesloopstamp = this._momento.loopstampPos; 
+    this._previousExplodeToParticHeroesloopStamp = this._momento.loopStampPos; 
   }
   
   _explodeParticHero(heroIndex) {
@@ -103,7 +104,7 @@ class Hero extends AbstractRendererModule {
     let r = this._partics[heroIndex * 6 + 3];
     let g = this._partics[heroIndex * 6 + 4];
     let b = this._partics[heroIndex * 6 + 5];
-    console.log('boom lp, heroIndex, rgb', this._momento.loopstampPos, heroIndex, r,g,b);
+    console.log('boom lp, heroIndex, rgb', this._momento.loopStampPos, heroIndex, r,g,b);
     //this._renderer.explode([ {pos, vel, rgb: [r, g, b] } ]);
   }  
   
@@ -131,7 +132,7 @@ class Hero extends AbstractRendererModule {
       let intPosFrom = Math.floor(pos - halfSize);
       let intPosTo = Math.floor(pos + halfSize);
       let baseStrobeFactor = 0;
-      let burnRatio = 0.5; // TODO loopstamp it
+      let burnRatio = 0.5; // TODO loopStamp it
       let brightnessFactor = -baseStrobeFactor + this._runtimeOptions.particHeroesBaseBrightness + this._particHeroesBurnRatioToBrightnessFactor(burnRatio);
       for (let ii = intPosFrom; ii <= intPosTo; ii++) {
         this._ring.g.master[ii * 3 + 0] += r * 3.0 * brightnessFactor;

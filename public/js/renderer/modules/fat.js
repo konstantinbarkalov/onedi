@@ -10,7 +10,6 @@ import AbstractRendererModule from './abstractRendererModule';
 class Fat extends AbstractRendererModule {
   static get _defaultInitialOptions() {
     return Object.assign({}, super._defaultInitialOptions, {
-      ///////ionica: null,
     });
   }
   static get _defaultRuntimeOptions() {
@@ -28,6 +27,7 @@ class Fat extends AbstractRendererModule {
   /* extend */ _construct() {
     super._construct();
     this._partics = new Float32Array(this._initialOptions.particFatsMaxCount * 6);
+    this._previousExplodeToParticFatsloopStamp = 0;
   }
   /* declare */ _onModuleReset() {
     this._fillParticFatsRandom();  
@@ -54,10 +54,10 @@ class Fat extends AbstractRendererModule {
   }
   _liveParticFats() {
     for (let i = 0; i < this._initialOptions.particFatsMaxCount; i++) {
-      let ttl = (this._momento.loopstampPos) - i / this._initialOptions.particFatsMaxCount; // shift per beat
+      let ttl = (this._momento.loopStampPos) - i / this._initialOptions.particFatsMaxCount; // shift per beat
       ttl = safemod(ttl, 1);    
-      let vel = this._momento.turnstampVel * this._rendererInitialOptions.masterPixelCount;      
-      let pos = this._momento.turnstampPos * this._rendererInitialOptions.masterPixelCount;
+      let vel = this._momento.turnStampVel * this._rendererInitialOptions.masterPixelCount;      
+      let pos = this._momento.turnStampPos * this._rendererInitialOptions.masterPixelCount;
        
       pos += i / this._initialOptions.particFatsMaxCount * this._rendererInitialOptions.masterPixelCount; // shift per beat
       pos = safemod(pos, this._rendererInitialOptions.masterPixelCount);
@@ -69,12 +69,12 @@ class Fat extends AbstractRendererModule {
   }
 
   _liveAndDrawOnFlowExplodes() {
-    let nowFatInt = Math.floor(this._momento.loopstampPos * this._initialOptions.particFatsMaxCount);
-    let prevFatInt = Math.floor(this._momento.previousExplodeToParticFatsloopstamp * this._initialOptions.particFatsMaxCount);
+    let nowFatInt = Math.floor(this._momento.loopStampPos * this._initialOptions.particFatsMaxCount);
+    let prevFatInt = Math.floor(this._previousExplodeToParticFatsloopStamp * this._initialOptions.particFatsMaxCount);
     if (nowFatInt != prevFatInt) {
       this._explodeParticFat(nowFatInt);
     }
-    this._momento.previousExplodeToParticFatsloopstamp = this._momento.loopstampPos; 
+    this._previousExplodeToParticFatsloopStamp = this._momento.loopStampPos; 
   }
   
   _explodeParticFat(fatIndex) {
@@ -83,7 +83,7 @@ class Fat extends AbstractRendererModule {
     let r = this._partics[fatIndex * 6 + 3];
     let g = this._partics[fatIndex * 6 + 4];
     let b = this._partics[fatIndex * 6 + 5];
-    console.log('boom lp, fatIndex, rgb', this._momento.loopstampPos, fatIndex, r,g,b);
+    console.log('boom lp, fatIndex, rgb', this._momento.loopStampPos, fatIndex, r,g,b);
     this._renderer.explode([ {pos, vel, rgb: [r, g, b] } ]);
   }  
   
@@ -111,7 +111,7 @@ class Fat extends AbstractRendererModule {
       let intPosFrom = Math.floor(pos - halfSize);
       let intPosTo = Math.floor(pos + halfSize);
       let baseStrobeFactor = 0;
-      let burnRatio = 0.5; // TODO loopstamp it
+      let burnRatio = 0.5; // TODO loopStamp it
       let brightnessFactor = -baseStrobeFactor + this._runtimeOptions.particFatsBaseBrightness + this._particFatsBurnRatioToBrightnessFactor(burnRatio);
       for (let ii = intPosFrom; ii <= intPosTo; ii++) {
         this._ring.g.master[ii * 3 + 0] += r * 2.0 * brightnessFactor;

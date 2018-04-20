@@ -18,9 +18,9 @@ class Dyna extends AbstractRendererModule {
       particDynasBoomVel: 1000,
       particDynasAverageTtl: 10,
       particDynasBurnTtl: 5,
-      particDynasBaseBrightness: 0.1,
+      particDynasBaseBrightness: 0.0,
       burnBornMultiplier: 10,
-      burnDieMultiplier: 1 / 100,
+      burnDieMultiplier: 1 / 10,
     });
   }
   static _getCoreconfigInitialOptions(coreconfig, coreconfigKey) {
@@ -57,7 +57,7 @@ class Dyna extends AbstractRendererModule {
   }
   _explodeParticFat({pos, vel, rgb: [r, g, b] }) {
 
-    console.log('boom dyna, rgb', this._momento.loopstampPos, r,g,b);
+    console.log('boom dyna, rgb', this._momento.loopStampPos, r,g,b);
     for (let i = 0; i < this._runtimeOptions.particDynasBoomCount; i++) {
       let spawnedparticdynasindex = Math.floor(Math.random() * this._initialOptions.particDynasMaxCount)
       // todo: smart grave
@@ -79,7 +79,7 @@ class Dyna extends AbstractRendererModule {
     }
   }
   _liveExplode() {
-    let explodes = this._momento.explodes;
+    let explodes = this._explodes;
     explodes.forEach((explode) => {
      this._explodeParticFat(explode);
     });
@@ -87,7 +87,7 @@ class Dyna extends AbstractRendererModule {
   _liveParticDynas() {
     let timeFactor = 1;
     if (this._input.momentaryB.value) {
-      timeFactor = (this._momento.beatstampPos * 1 % 1 < 0.5)?1:-1;
+      timeFactor = (this._momento.beatStampPos * 1 % 1 < 0.5)?1:-1;
     }
     let flowAffectRatio = 1 - Math.pow(0.25, this._momento.dt);        
     for (let i = 0; i < this._initialOptions.particDynasMaxCount; i++) {
@@ -136,7 +136,7 @@ class Dyna extends AbstractRendererModule {
   _drawOnMasterParticDynas() {
     let baseStrobeFactor = 0;
     if (this._input.momentaryC.value) {
-      baseStrobeFactor = (this._momento.beatstampPos * 2 % 1 > 0.75)?10:-1;
+      baseStrobeFactor = (this._momento.beatStampPos * 2 % 1 > 0.75)?10:-1;
     }
     for (let i = 0; i < this._initialOptions.particDynasMaxCount; i++) {
       let ttl = this._partics[i * 8 + 0];
