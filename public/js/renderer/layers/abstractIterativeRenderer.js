@@ -1,7 +1,7 @@
 'use strict';
 // ES6
-import OptionizedCoreconfigured from './../optionizedCoreconfigured.js';
-import Helper from './helper.js';
+import OptionizedCoreconfigured from './../../optionizedCoreconfigured.js';
+import Helper from './../helper.js';
 import { EventEmitter } from 'events';
 
 let safemod = Helper.safemod;

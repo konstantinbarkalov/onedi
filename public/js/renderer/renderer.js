@@ -1,11 +1,12 @@
 'use strict';
 // ES6
 import Limiter from './limiter.js';
-import ParticedRenderer from './particedRenderer';
+import ParticedRenderer from './layers/particedRenderer';
 import Helper from './helper.js';
 
 import Dyna from './modules/dyna.js';
 import Fat from './modules/fat.js';
+import Hero from './modules/hero.js';
 import Flow from './modules/flow.js';
 
 let safemod = Helper.safemod;
@@ -42,30 +43,17 @@ class Renderer extends ParticedRenderer {
     this.modules = {
       dyna: new Dyna({renderer: this, coreconfigKey: this._initialOptions.coreconfigKey}),
       fat: new Fat({renderer: this, coreconfigKey: this._initialOptions.coreconfigKey}),
+      hero: new Hero({renderer: this, coreconfigKey: this._initialOptions.coreconfigKey}),
       flow: new Flow({renderer: this}),
     }
   }
-  /* expend */ _onKernelReset() {
-    super._onKernelReset();
-  }
 
-  /* extend */ _onKernelMomento() {
-    super._onKernelMomento();
-  }
-  /* declare */ _onKernelLive() {
-    //super._onKernelLive();
 
-    
-    this._liveParticHeroes();
-    this._drawOnFlowParticHeroes();
-
-    //this._liveAndDrawOnFlowExplodes();
-  }
   /* declare */ _onKernelDraw() {
     //super._onKernelDraw();
 
     this._fillMasterBlack();
-    this._drawOnMasterParticHeroes();
+
     //this._fillMasterRandom();
   }
   /* declare */ _onKernelPostdraw() {
@@ -76,20 +64,17 @@ class Renderer extends ParticedRenderer {
     this._drawOnComposeDigitalStrobe();  
     this._composeToIngear();
     this._processComposeWithIngear();
+  }
+  /* declare */ _onKernelFinal() {
+    //super._onKernelPostdraw();
 
     //
-    this._kernelPostdrawUpdateOutputBuffer();
-    this._kernelPostdrawOutputBuffer();
-    this._kernelPostdrawEmitOutputBuffer();
+    this._finalUpdateOutputBuffer();
   }
 
-  _kernelPostdrawUpdateOutputBuffer() {
+  _finalUpdateOutputBuffer() {
     this._updateOutputBuffer();
-  }
-  _kernelPostdrawOutputBuffer() {
     this._processLimiter();
-  }
-  _kernelPostdrawEmitOutputBuffer() {
     this._emitOutputBuffer();    
   }
 
@@ -100,70 +85,7 @@ class Renderer extends ParticedRenderer {
   }
 
 
-  _liveParticHeroes() {
-    for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
-      let vel = this._momento.loopstampVel * this._initialOptions.masterPixelCount;      
-      let pos = this._momento.loopstampPos * this._initialOptions.masterPixelCount;
-      
-      vel += (0.5 - this._input.analogD.value) * (this._momento.squeazeBeatstampVel - this._momento.beatstampVel) * this._initialOptions.masterPixelCount;      
-      pos += (0.5 - this._input.analogD.value) * (this._momento.squeazeBeatstampPos - this._momento.beatstampPos) * this._initialOptions.masterPixelCount;
-     
-      vel += this._momento.turnstampVel * this._initialOptions.masterPixelCount;      
-      pos += this._momento.turnstampPos * this._initialOptions.masterPixelCount;
 
-
-      pos = safemod(pos, this._initialOptions.masterPixelCount);
-      
-      this._partic.heroes[i * 6 + 1] = pos;
-      this._partic.heroes[i * 6 + 2] = vel;
-    }
-  }
-  
-  // _liveAndDrawOnFlowExplodes() {
-  //   let nowFatInt = Math.floor(this._momento.loopstampPos * this._initialOptions.particFatsMaxCount);
-  //   let prevFatInt = Math.floor(this._momento.previousExplodeToParticHeroesloopstamp * this._initialOptions.particFatsMaxCount);
-  //   if (nowFatInt != prevFatInt) {
-  //     this._explodeFlow(nowFatInt);
-  //   }
-  //   this._momento.previousExplodeToParticHeroesloopstamp = this._momento.loopstampPos; 
-  // }
-    
- 
-
-
-  _drawOnMasterParticHeroes() {
-    for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
-      let pos = this._partic.heroes[i * 6 + 1];
-      let r = this._partic.heroes[i * 6 + 3];
-      let g = this._partic.heroes[i * 6 + 4];
-      let b = this._partic.heroes[i * 6 + 5];
-
-      let halfSize = 12; // TODO: masterPixelCount changes agnostic
-      let intPosFrom = Math.floor(pos - halfSize);
-      let intPosTo = Math.floor(pos + halfSize);
-      for (let ii = intPosFrom; ii <= intPosTo; ii++) {
-        this._ring.g.master[ii * 3 + 0] += r * 3.0;
-        this._ring.g.master[ii * 3 + 1] += g * 3.0;
-        this._ring.g.master[ii * 3 + 2] += b * 3.0;  
-      }
-    }
-  }  
-
-  _drawOnFlowParticHeroes() {
-    let affectOnFlowRatio = 1 - Math.pow(0.00001, this._momento.dt);
-    for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
-      let pos = this._partic.heroes[i * 6 + 1];
-      let vel = this._partic.heroes[i * 6 + 2];
-      let halfSize = 12; // TODO: masterPixelCount changes agnostic
-      let intPosFrom = Math.floor(pos - halfSize);
-      let intPosTo = Math.floor(pos + halfSize);
-      for (let ii = intPosFrom; ii <= intPosTo; ii++) {
-        let flow = this._ring.ph.flow[ii];
-        flow += (vel - flow) * affectOnFlowRatio;
-        this._ring.ph.flow[ii] = flow;
-      }
-    }
-  }  
   _masterToCompose() {
     let rescaleRate = this._initialOptions.masterPixelCount / this._initialOptions.composePixelCount;
     

@@ -5,6 +5,9 @@
     },
     "fat": {
       "particsMaxCount": 4
+    },
+    "hero": {
+      "particsMaxCount": 1
     }
   },
   "render": {
