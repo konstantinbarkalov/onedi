@@ -4,7 +4,7 @@
       "particsMaxCount": 2048
     },
     "fat": {
-      "particsMaxCount": 8
+      "particsMaxCount": 4
     }
   },
   "render": {

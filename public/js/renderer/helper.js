@@ -5,4 +5,5 @@ class Helper {
     return ((divident % divisor) + divisor) % divisor;
   }
 }
+
 export default Helper;

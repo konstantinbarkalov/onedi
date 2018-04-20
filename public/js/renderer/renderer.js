@@ -3,7 +3,10 @@
 import Limiter from './limiter.js';
 import ParticedRenderer from './particedRenderer';
 import Helper from './helper.js';
+
 import Dyna from './modules/dyna.js';
+import Fat from './modules/fat.js';
+import Flow from './modules/flow.js';
 
 let safemod = Helper.safemod;
 class Renderer extends ParticedRenderer {
@@ -18,15 +21,7 @@ class Renderer extends ParticedRenderer {
       ],
     });
   }
-  static get _defaultRuntimeOptions() {
-    return Object.assign({}, super._defaultRuntimeOptions, {
-      beatPerLoop: 8,  // AbstractIterativeRenderer based
-      flowBoomVel: 1500,
-      pumpMaxPower: 10,
-      bpm: 175 / 2,  // AbstractIterativeRenderer based
-    });
-  }
-
+  
   static _getCoreconfigInitialOptions(coreconfig, coreconfigKey) {
     return Object.assign({}, super._getCoreconfigInitialOptions(coreconfig, coreconfigKey), {
       masterPixelCount: coreconfig.render.master.pixelCount,  // RingedRenderer based
@@ -45,7 +40,9 @@ class Renderer extends ParticedRenderer {
     this._limiter = new Limiter({coreconfigKey: this._runtimeOptions.coreconfigKey});
     
     this.modules = {
-      dyna: new Dyna({renderer: this, coreconfigKey: this._initialOptions.coreconfigKey})
+      dyna: new Dyna({renderer: this, coreconfigKey: this._initialOptions.coreconfigKey}),
+      fat: new Fat({renderer: this, coreconfigKey: this._initialOptions.coreconfigKey}),
+      flow: new Flow({renderer: this}),
     }
   }
   /* expend */ _onKernelReset() {
@@ -58,7 +55,6 @@ class Renderer extends ParticedRenderer {
   /* declare */ _onKernelLive() {
     //super._onKernelLive();
 
-    this._dimAndPumpFlow();
     
     this._liveParticHeroes();
     this._drawOnFlowParticHeroes();
@@ -102,18 +98,6 @@ class Renderer extends ParticedRenderer {
     this._limiter.bypass = !this._input.switchB.value;  
     this._limiter.process(outputBufferputCompose, this._momento.dt, outputBufferputCompose, {from: 0, to: 255});
   }
-  _dimAndPumpFlow() {
-    let dimFlowRatio = Math.pow(0.5, this._momento.dt);
-    let pumpPower = (this._input.analogF.value - 0.5) * this._runtimeOptions.pumpMaxPower;
-    for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
-      // dim
-      this._ring.ph.flow[i] *= dimFlowRatio;
-      
-      // pump
-      this._ring.ph.flow[i] += (1 - dimFlowRatio) * pumpPower * this._initialOptions.masterPixelCount
-    }
-      
-  }
 
 
   _liveParticHeroes() {
@@ -144,17 +128,7 @@ class Renderer extends ParticedRenderer {
   //   this._momento.previousExplodeToParticHeroesloopstamp = this._momento.loopstampPos; 
   // }
     
-  // _explodeFlow(fatIndex) {
-  //   let explodedFatPos = this._partic.fats[fatIndex * 6 + 1];
-    
-  //   for (let i = 0; i <= this._initialOptions.masterPixelCount; i++) {
-  //     let flow = this._ring.ph.flow[i];
-  //     let diffRatio = (explodedFatPos - i) / this._initialOptions.masterPixelCount; 
-  //     let flowExplodeRatio = ((diffRatio % 1) + 1) % 1 - 0.5;
-  //     flow += flowExplodeRatio * this._runtimeOptions.flowBoomVel;
-  //     this._ring.ph.flow[i] = flow;
-  //   }
-  // }  
+ 
 
 
   _drawOnMasterParticHeroes() {
@@ -176,7 +150,7 @@ class Renderer extends ParticedRenderer {
   }  
 
   _drawOnFlowParticHeroes() {
-    let dimFlowRatio = Math.pow(0.5, this._momento.dt);
+    let affectOnFlowRatio = 1 - Math.pow(0.00001, this._momento.dt);
     for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
       let pos = this._partic.heroes[i * 6 + 1];
       let vel = this._partic.heroes[i * 6 + 2];
@@ -185,7 +159,7 @@ class Renderer extends ParticedRenderer {
       let intPosTo = Math.floor(pos + halfSize);
       for (let ii = intPosFrom; ii <= intPosTo; ii++) {
         let flow = this._ring.ph.flow[ii];
-        flow = (vel - flow) * dimFlowRatio;
+        flow += (vel - flow) * affectOnFlowRatio;
         this._ring.ph.flow[ii] = flow;
       }
     }

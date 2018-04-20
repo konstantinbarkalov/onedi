@@ -10,14 +10,12 @@ import AbstractRendererModule from './abstractRendererModule';
 class Dyna extends AbstractRendererModule {
   static get _defaultInitialOptions() {
     return Object.assign({}, super._defaultInitialOptions, {
-      ///////ionica: null,
-      particDynasMaxCount: 2048,
     });
   }
   static get _defaultRuntimeOptions() {
     return Object.assign({}, super._defaultRuntimeOptions, {
       particDynasBoomCount: 512,
-      particDynasBoomVel: 1500,
+      particDynasBoomVel: 1000,
       particDynasAverageTtl: 10,
       particDynasBurnTtl: 5,
       particDynasBaseBrightness: 0.1,

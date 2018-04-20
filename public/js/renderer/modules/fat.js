@@ -11,8 +11,6 @@ class Fat extends AbstractRendererModule {
   static get _defaultInitialOptions() {
     return Object.assign({}, super._defaultInitialOptions, {
       ///////ionica: null,
-      particFatsMaxCount: 8,
-
     });
   }
   static get _defaultRuntimeOptions() {
@@ -29,7 +27,7 @@ class Fat extends AbstractRendererModule {
   }
   /* extend */ _construct() {
     super._construct();
-    this._partics = new Float32Array(this._initialOptions.particFatsMaxCount * 8);
+    this._partics = new Float32Array(this._initialOptions.particFatsMaxCount * 6);
   }
   /* declare */ _onModuleReset() {
     this._fillParticFatsRandom();  
@@ -43,6 +41,16 @@ class Fat extends AbstractRendererModule {
   /* declare */ _onModuleDraw() {
     this._drawOnMasterParticFats();
     
+  }
+  _fillParticFatsRandom() {
+    for (let i = 0; i < this._initialOptions.particFatsMaxCount; i++) {
+      this._partics[i * 6 + 0] = 0; //TODO drop
+      this._partics[i * 6 + 1] = Math.random() * this._initialOptions.masterPixelCount;
+      this._partics[i * 6 + 2] = (Math.random() - 0.5) * 500;
+      this._partics[i * 6 + 3] = Math.random();
+      this._partics[i * 6 + 4] = Math.random();
+      this._partics[i * 6 + 5] = Math.random();
+    }
   }
   _liveParticFats() {
     for (let i = 0; i < this._initialOptions.particFatsMaxCount; i++) {
@@ -70,13 +78,13 @@ class Fat extends AbstractRendererModule {
   }
   
   _explodeParticFat(fatIndex) {
-    let pos = this._partic.fats[fatIndex * 6 + 1];
-    let vel = this._partic.fats[fatIndex * 6 + 2];
-    let r = this._partic.fats[fatIndex * 6 + 3];
-    let g = this._partic.fats[fatIndex * 6 + 4];
+    let pos = this._partics[fatIndex * 6 + 1];
+    let vel = this._partics[fatIndex * 6 + 2];
+    let r = this._partics[fatIndex * 6 + 3];
+    let g = this._partics[fatIndex * 6 + 4];
     let b = this._partics[fatIndex * 6 + 5];
     console.log('boom lp, fatIndex, rgb', this._momento.loopstampPos, fatIndex, r,g,b);
-    this.explode([ {pos, vel, rgb: [r, g, b] } ]);
+    this._renderer.explode([ {pos, vel, rgb: [r, g, b] } ]);
   }  
   
 
@@ -99,7 +107,7 @@ class Fat extends AbstractRendererModule {
       let b = this._partics[i * 6 + 5];
 
       let halfSize = 6; // TODO: masterPixelCount changes agnostic
-      halfSize *= ttl * 3;
+      halfSize *= ttl * ttl * 3;
       let intPosFrom = Math.floor(pos - halfSize);
       let intPosTo = Math.floor(pos + halfSize);
       let baseStrobeFactor = 0;
@@ -114,9 +122,9 @@ class Fat extends AbstractRendererModule {
   }  
 
   _drawOnFlowParticFats() {
-    let dimFlowRatio = Math.pow(0.5, this._momento.dt);
+    let affectOnFlowRatio = 1 - Math.pow(0.0001, this._momento.dt);
     for (let i = 0; i < this._initialOptions.particFatsMaxCount; i++) {
-      let pos = this._partic.fats[i * 6 + 1];
+      let pos = this._partics[i * 6 + 1];
       let vel = this._partics[i * 6 + 2];
 
    
@@ -125,7 +133,7 @@ class Fat extends AbstractRendererModule {
       let intPosTo = Math.floor(pos + halfSize);
       for (let ii = intPosFrom; ii <= intPosTo; ii++) {
         let flow = this._ring.ph.flow[ii];
-        flow = (vel - flow) * dimFlowRatio;
+        flow += (vel - flow) * affectOnFlowRatio;
         this._ring.ph.flow[ii] = flow;
       }
     }
