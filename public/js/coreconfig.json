@@ -2,6 +2,9 @@
   "renderer": {
     "dyna": {
       "particsMaxCount": 2048
+    },
+    "fat": {
+      "particsMaxCount": 8
     }
   },
   "render": {

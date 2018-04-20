@@ -1,8 +1,8 @@
 'use strict';
 // ES6
-import MomentoRenderer from './momentoRenderer';
+import ExplodingRenderer from './explodingRenderer';
 
-class RingedRenderer extends MomentoRenderer {
+class RingedRenderer extends ExplodingRenderer {
 
   static _getCoreconfigInitialOptions(coreconfig, coreconfigKey) {
     return {
@@ -11,7 +11,7 @@ class RingedRenderer extends MomentoRenderer {
     }
   }
   
-  /* exptend */ _construct() {
+  /* extend */ _construct() {
     super._construct();
     this._ring = {
       g: {
@@ -32,8 +32,8 @@ class RingedRenderer extends MomentoRenderer {
     }
   }
 
-  /* exptend */ _localReset() {
-    super._localReset();
+  /* extend */ _onKernelReset() {
+    super._onKernelReset();
     this._resetRing();
   }
   _resetRing() {

@@ -10,9 +10,12 @@ class Renderer extends ParticedRenderer {
   static get _defaultInitialOptions() {
     return Object.assign({}, super._defaultInitialOptions, {
       ionica: null,
-      particFatsMaxCount: 8, // RingedRenderer based
       particHeroesMaxCount: 1, // RingedRenderer based
       fps: 60,  // AbstractIterativeRenderer based
+      iterationSteps: [
+        ...super._defaultInitialOptions.iterationSteps,
+        'live', 'draw', 'postdraw', 'final'
+      ],
     });
   }
   static get _defaultRuntimeOptions() {
@@ -30,8 +33,7 @@ class Renderer extends ParticedRenderer {
       composePixelCount: coreconfig.render.composes[coreconfigKey].pixelCount,  // RingedRenderer based
     });
   }
-  
-  
+
   _construct() {
     if (!this._initialOptions.ionica) {
       throw new Error('Instance of ionica is required for renderer to work');
@@ -46,35 +48,32 @@ class Renderer extends ParticedRenderer {
       dyna: new Dyna({renderer: this, coreconfigKey: this._initialOptions.coreconfigKey})
     }
   }
-  /* exptend */ _localReset() {
-    super._localReset();
+  /* expend */ _onKernelReset() {
+    super._onKernelReset();
   }
 
-  /* extend */ _localPrepare() {
-    super._localPrepare();
+  /* extend */ _onKernelMomento() {
+    super._onKernelMomento();
   }
-  /* extend */ _localLive() {
-    super._localLive();
+  /* declare */ _onKernelLive() {
+    //super._onKernelLive();
 
     this._dimAndPumpFlow();
-    this._liveParticFats();
-    this._drawOnFlowParticFats();
     
     this._liveParticHeroes();
     this._drawOnFlowParticHeroes();
 
-    this._liveAndDrawOnFlowExplodes();
+    //this._liveAndDrawOnFlowExplodes();
   }
-  /* extend */ _localDraw() {
-    super._localDraw();
+  /* declare */ _onKernelDraw() {
+    //super._onKernelDraw();
 
     this._fillMasterBlack();
-    this._drawOnMasterParticFats();
     this._drawOnMasterParticHeroes();
     //this._fillMasterRandom();
   }
-  /* extend */ _localPostdraw() {
-    super._localPostdraw();
+  /* declare */ _onKernelPostdraw() {
+    //super._onKernelPostdraw();
 
     this._masterToCompose();
     //this._fillComposeDebug();
@@ -83,18 +82,18 @@ class Renderer extends ParticedRenderer {
     this._processComposeWithIngear();
 
     //
-    this._localPostdrawUpdateOutputBuffer();
-    this._localPostdrawOutputBuffer();
-    this._localPostdrawEmitOutputBuffer();
+    this._kernelPostdrawUpdateOutputBuffer();
+    this._kernelPostdrawOutputBuffer();
+    this._kernelPostdrawEmitOutputBuffer();
   }
 
-  _localPostdrawUpdateOutputBuffer() {
+  _kernelPostdrawUpdateOutputBuffer() {
     this._updateOutputBuffer();
   }
-  _localPostdrawOutputBuffer() {
+  _kernelPostdrawOutputBuffer() {
     this._processLimiter();
   }
-  _localPostdrawEmitOutputBuffer() {
+  _kernelPostdrawEmitOutputBuffer() {
     this._emitOutputBuffer();    
   }
 
@@ -116,21 +115,7 @@ class Renderer extends ParticedRenderer {
       
   }
 
-  _liveParticFats() {
-    for (let i = 0; i < this._initialOptions.particFatsMaxCount; i++) {
-      let ttl = (this._momento.loopstampPos) - i / this._initialOptions.particFatsMaxCount; // shift per beat
-      ttl = safemod(ttl, 1);    
-      let vel = this._momento.turnstampVel * this._initialOptions.masterPixelCount;      
-      let pos = this._momento.turnstampPos * this._initialOptions.masterPixelCount;
-       
-      pos += i / this._initialOptions.particFatsMaxCount * this._initialOptions.masterPixelCount; // shift per beat
-      pos = safemod(pos, this._initialOptions.masterPixelCount);
-      
-      this._partic.fats[i * 6 + 0] = ttl;
-      this._partic.fats[i * 6 + 1] = pos;
-      this._partic.fats[i * 6 + 2] = vel;
-    }
-  }
+
   _liveParticHeroes() {
     for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
       let vel = this._momento.loopstampVel * this._initialOptions.masterPixelCount;      
@@ -150,74 +135,27 @@ class Renderer extends ParticedRenderer {
     }
   }
   
-  _liveAndDrawOnFlowExplodes() {
-    let nowFatInt = Math.floor(this._momento.loopstampPos * this._initialOptions.particFatsMaxCount);
-    let prevFatInt = Math.floor(this._momento.previousExplodeToParticDynasloopstamp * this._initialOptions.particFatsMaxCount);
-    if (nowFatInt != prevFatInt) {
-      this._explodeParticFat(nowFatInt);
-      this._explodeFlow(nowFatInt);
-    }
-    this._momento.previousExplodeToParticDynasloopstamp = this._momento.loopstampPos; 
-  }
-  
-  _explodeParticFat(fatIndex) {
-    let pos = this._partic.fats[fatIndex * 6 + 1];
-    let vel = this._partic.fats[fatIndex * 6 + 2];
-    let r = this._partic.fats[fatIndex * 6 + 3];
-    let g = this._partic.fats[fatIndex * 6 + 4];
-    let b = this._partic.fats[fatIndex * 6 + 5];
-    console.log('boom lp, fatIndex, rgb', this._momento.loopstampPos, fatIndex, r,g,b);
-    this.world.emit('explode', {pos, vel, rgb: [r, g, b] });
-  }  
-  _explodeFlow(fatIndex) {
-    let explodedFatPos = this._partic.fats[fatIndex * 6 + 1];
+  // _liveAndDrawOnFlowExplodes() {
+  //   let nowFatInt = Math.floor(this._momento.loopstampPos * this._initialOptions.particFatsMaxCount);
+  //   let prevFatInt = Math.floor(this._momento.previousExplodeToParticHeroesloopstamp * this._initialOptions.particFatsMaxCount);
+  //   if (nowFatInt != prevFatInt) {
+  //     this._explodeFlow(nowFatInt);
+  //   }
+  //   this._momento.previousExplodeToParticHeroesloopstamp = this._momento.loopstampPos; 
+  // }
     
-    for (let i = 0; i <= this._initialOptions.masterPixelCount; i++) {
-      let flow = this._ring.ph.flow[i];
-      let diffRatio = (explodedFatPos - i) / this._initialOptions.masterPixelCount; 
-      let flowExplodeRatio = ((diffRatio % 1) + 1) % 1 - 0.5;
-      flow += flowExplodeRatio * this._runtimeOptions.flowBoomVel;
-      this._ring.ph.flow[i] = flow;
-    }
-  }  
+  // _explodeFlow(fatIndex) {
+  //   let explodedFatPos = this._partic.fats[fatIndex * 6 + 1];
+    
+  //   for (let i = 0; i <= this._initialOptions.masterPixelCount; i++) {
+  //     let flow = this._ring.ph.flow[i];
+  //     let diffRatio = (explodedFatPos - i) / this._initialOptions.masterPixelCount; 
+  //     let flowExplodeRatio = ((diffRatio % 1) + 1) % 1 - 0.5;
+  //     flow += flowExplodeRatio * this._runtimeOptions.flowBoomVel;
+  //     this._ring.ph.flow[i] = flow;
+  //   }
+  // }  
 
-  _drawOnMasterParticFats() {
-    for (let i = 0; i < this._initialOptions.particFatsMaxCount; i++) {
-      let ttl = this._partic.fats[i * 6 + 0];
-      let pos = this._partic.fats[i * 6 + 1];
-      let r = this._partic.fats[i * 6 + 3];
-      let g = this._partic.fats[i * 6 + 4];
-      let b = this._partic.fats[i * 6 + 5];
-
-      let halfSize = 6; // TODO: masterPixelCount changes agnostic
-      halfSize *= ttl * 3;
-      let intPosFrom = Math.floor(pos - halfSize);
-      let intPosTo = Math.floor(pos + halfSize);
-      for (let ii = intPosFrom; ii <= intPosTo; ii++) {
-        this._ring.g.master[ii * 3 + 0] += r * 2.0;
-        this._ring.g.master[ii * 3 + 1] += g * 2.0;
-        this._ring.g.master[ii * 3 + 2] += b * 2.0;  
-      }
-    }
-  }  
-
-  _drawOnFlowParticFats() {
-    let dimFlowRatio = Math.pow(0.5, this._momento.dt);
-    for (let i = 0; i < this._initialOptions.particFatsMaxCount; i++) {
-      let pos = this._partic.fats[i * 6 + 1];
-      let vel = this._partic.fats[i * 6 + 2];
-
-   
-      let halfSize = 6; // TODO: masterPixelCount changes agnostic
-      let intPosFrom = Math.floor(pos - halfSize);
-      let intPosTo = Math.floor(pos + halfSize);
-      for (let ii = intPosFrom; ii <= intPosTo; ii++) {
-        let flow = this._ring.ph.flow[ii];
-        flow = (vel - flow) * dimFlowRatio;
-        this._ring.ph.flow[ii] = flow;
-      }
-    }
-  }  
 
   _drawOnMasterParticHeroes() {
     for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {

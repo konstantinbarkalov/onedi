@@ -30,29 +30,21 @@ class Dyna extends AbstractRendererModule {
       particDynasMaxCount: coreconfig.renderer.dyna.particsMaxCount, 
     });
   }
-  /* override */ _construct() {
+  /* extend */ _construct() {
     super._construct();
     this._partics = new Float32Array(this._initialOptions.particDynasMaxCount * 8);
   }
-  /* API implement */ reset() {
+  /* declare */ _onModuleReset() {
     this._fillParticDynasRandom();  
   }
-  /* API implement */ prepare() {
-    return  
-  }
-  /* API implement */ live() {
+  /* declare */ _onModuleLive() {
+    this._liveExplode();
     this._liveParticDynas();        
   }
-  /* API implement */ draw() {
+  /* declare */ _onModuleDraw() {
     this._drawOnMasterParticDynas();    
   }
-  /* API implement */ postdraw() {
-    return;    
-  }
-  /* API implement */ explode(explodes) {
-    return;
-    // TODO    
-  }
+
   _fillParticDynasRandom() {
     for (let i = 0; i < this._initialOptions.particDynasMaxCount; i++) {
       this._partics[i * 8 + 0] = Math.random() * this._runtimeOptions.particDynasAverageTtl * 2;
@@ -65,13 +57,9 @@ class Dyna extends AbstractRendererModule {
       this._partics[i * 8 + 7] = Math.random(); // entropy
     }
   }
-  _explodeParticFat(fatIndex) {
-    let pos = this._partic.fats[fatIndex * 6 + 1];
-    let vel = this._partic.fats[fatIndex * 6 + 2];
-    let r = this._partic.fats[fatIndex * 6 + 3];
-    let g = this._partic.fats[fatIndex * 6 + 4];
-    let b = this._partic.fats[fatIndex * 6 + 5];
-    console.log('boom lp, fatIndex, rgb', this._momento.loopstampPos, fatIndex, r,g,b);
+  _explodeParticFat({pos, vel, rgb: [r, g, b] }) {
+
+    console.log('boom dyna, rgb', this._momento.loopstampPos, r,g,b);
     for (let i = 0; i < this._runtimeOptions.particDynasBoomCount; i++) {
       let spawnedparticdynasindex = Math.floor(Math.random() * this._initialOptions.particDynasMaxCount)
       // todo: smart grave
@@ -91,6 +79,12 @@ class Dyna extends AbstractRendererModule {
       this._partics[spawnedparticdynasindex * 8 + 5] = dynaB;
       this._partics[spawnedparticdynasindex * 8 + 6] = dynaBurnTtl;
     }
+  }
+  _liveExplode() {
+    let explodes = this._momento.explodes;
+    explodes.forEach((explode) => {
+     this._explodeParticFat(explode);
+    });
   }  
   _liveParticDynas() {
     let timeFactor = 1;

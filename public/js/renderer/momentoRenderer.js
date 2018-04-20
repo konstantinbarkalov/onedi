@@ -6,6 +6,15 @@ import { EventEmitter } from 'events';
 
 let safemod = Helper.safemod;
 class MomentoRenderer extends AbstractIterativeRenderer {
+  
+  /* extend */ static get _defaultInitialOptions() {
+    return Object.assign({}, super._defaultInitialOptions, {
+      iterationSteps: [
+        ...super._defaultInitialOptions.iterationSteps,
+        'momento',
+      ],
+    });
+  }
 
   static get _defaultRuntimeOptions() {
     return {
@@ -35,7 +44,8 @@ class MomentoRenderer extends AbstractIterativeRenderer {
 
     this._momento.turnstampPos = 0;
     this._momento.turnstampVel = 0;
-    this._momento.previousExplodeToParticDynasloopstamp = 0;
+    this._momento.previousExplodeToParticHeroesloopstamp = 0;
+    this._momento.previousExplodeToParticFatsloopstamp = 0;
   }
   _updateMomentoTime() {
     let t = Date.now() / 1000;
@@ -43,7 +53,7 @@ class MomentoRenderer extends AbstractIterativeRenderer {
     this._momento.t = t;
     this._momento.dt = dt || 50;
   }
-  _liveMomentoStamp() {
+  _liveMomento() {
     this._momento.loopstampVel = this._runtimeOptions.bpm / 60 / this._runtimeOptions.beatPerLoop;   
     this._momento.loopstampPos += this._momento.dt * this._momento.loopstampVel;
     this._momento.loopstampPos = safemod(this._momento.loopstampPos, 1);
@@ -76,13 +86,14 @@ class MomentoRenderer extends AbstractIterativeRenderer {
     this._momento.turnstampPos = safemod(this._momento.turnstampPos, 1);
   }
 
-  /* override */ _localReset() {
-    super._localReset();
+  /* declare */ _onKernelReset() {
+    //super._onKernelReset();
     this._resetMomento();
   }
-  /* override */ _localPrepare() {
+  /* declare */ _onKernelMomento() {
+    //super._onKernelMomento();
     this._updateMomentoTime();
-    this._liveMomentoStamp();
+    this._liveMomento();
   }
 }
 
