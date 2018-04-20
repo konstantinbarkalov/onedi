@@ -24,7 +24,7 @@ class Dyna extends AbstractRendererModule {
     this._liveExplode();
   }
   _dimAndPumpFlow() {
-    let dimFlowRatio = Math.pow(0.5, this._momento.dt);
+    let dimFlowRatio = Math.pow(0.5, this._time.dt);
     let pumpPower = (this._input.analogF.value - 0.5) * this._runtimeOptions.pumpMaxPower;
     for (let i = 0; i < this._rendererInitialOptions.masterPixelCount; i++) {
       // dim

@@ -17,7 +17,7 @@ class MomentoRenderer extends IonizedRenderer {
     });
   }
 
-  static get _defaultRuntimeOptions() {
+  /* extend */ static get _defaultRuntimeOptions() {
     return Object.assign({}, super._defaultRuntimeOptions, {
       beatsPerLoop: 8,
       beatsPerJump: 1,
@@ -58,16 +58,11 @@ class MomentoRenderer extends IonizedRenderer {
     this._momento.turnStampVel = 0;
 
   }
-  _updateMomentoTime() {
-    let t = Date.now() / 1000;
-    let dt = t - this._momento.t;
-    this._momento.t = t;
-    this._momento.dt = dt || 50;
-  }
+
   _updateMomentoStamps() {
     // square is master
     this._momento.squareStampVel = this._runtimeOptions.bpm / 60 / this._initialOptions.beatsPerSquare;   
-    this._momento.squareStampPos += this._momento.dt * this._momento.squareStampVel;
+    this._momento.squareStampPos += this._time.dt * this._momento.squareStampVel;
     this._momento.squareStampPos = safemod(this._momento.squareStampPos, 1);
     
     // slave stamps
@@ -106,17 +101,16 @@ class MomentoRenderer extends IonizedRenderer {
    
     //this._momento.turnStampVel += (this._momento.squeazeBeatStampVel - this._momento.beatStampVel) / 12;      
     
-    this._momento.turnStampPos += this._momento.dt * this._momento.turnStampVel;
+    this._momento.turnStampPos += this._time.dt * this._momento.turnStampVel;
     this._momento.turnStampPos = safemod(this._momento.turnStampPos, 1);
   }
 
-  /* declare */ _onKernelReset() {
-    //super._onKernelReset();
+  /* extend */ _onKernelReset() {
+    super._onKernelReset();
     this._resetMomento();
   }
   /* declare */ _onKernelMomento() {
     //super._onKernelMomento();
-    this._updateMomentoTime();
     this._updateMomentoStamps();
   }
 }

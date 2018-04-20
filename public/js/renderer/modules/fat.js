@@ -122,7 +122,7 @@ class Fat extends AbstractRendererModule {
   }  
 
   _drawOnFlowParticFats() {
-    let affectOnFlowRatio = 1 - Math.pow(0.0001, this._momento.dt);
+    let affectOnFlowRatio = 1 - Math.pow(0.0001, this._time.dt);
     for (let i = 0; i < this._initialOptions.particFatsMaxCount; i++) {
       let pos = this._partics[i * 6 + 1];
       let vel = this._partics[i * 6 + 2];

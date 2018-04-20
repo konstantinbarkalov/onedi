@@ -21,6 +21,7 @@ class AbstractRendererModule extends OptionizedCoreconfigured{
   _constructShortcuts() {
     this._renderer = this._initialOptions.renderer;
     this._ee = this._initialOptions.renderer.ee.module;
+    this._time = this._initialOptions.renderer._time;
     this._input = this._initialOptions.renderer._input;
     this._momento = this._initialOptions.renderer._momento;
     this._explodes = this._initialOptions.renderer._explodes;

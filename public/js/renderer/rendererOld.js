@@ -99,10 +99,10 @@ class Renderer extends ParticedRenderer {
   _processLimiter() {
     let outputBufferputCompose = this._ring.outputBuffer.compose;
     this._limiter.bypass = !this._input.switchB.value;  
-    this._limiter.process(outputBufferputCompose, this._momento.dt, outputBufferputCompose, {from: 0, to: 255});
+    this._limiter.process(outputBufferputCompose, this._time.dt, outputBufferputCompose, {from: 0, to: 255});
   }
   _dimAndPumpFlow() {
-    let dimFlowRatio = Math.pow(0.5, this._momento.dt);
+    let dimFlowRatio = Math.pow(0.5, this._time.dt);
     let pumpPower = (this._input.analogF.value - 0.5) * this._runtimeOptions.pumpMaxPower;
     for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
       // dim
@@ -202,21 +202,21 @@ class Renderer extends ParticedRenderer {
     if (this._input.momentaryB.value) {
       timeFactor = (this._momento.beatStampPos * 1 % 1 < 0.5)?1:-1;
     }
-    let flowAffectRatio = 1 - Math.pow(0.25, this._momento.dt);        
+    let flowAffectRatio = 1 - Math.pow(0.25, this._time.dt);        
     for (let i = 0; i < this._initialOptions.particDynasMaxCount; i++) {
       let ttl = this._partic.dynas[i * 8 + 0];
-      if (ttl > this._momento.dt) {
-        ttl -= this._momento.dt;
+      if (ttl > this._time.dt) {
+        ttl -= this._time.dt;
         let pos = this._partic.dynas[i * 8 + 1];
         let vel = this._partic.dynas[i * 8 + 2];
         let burnTtl = this._partic.dynas[i * 8 + 6];
-        burnTtl -= this._momento.dt;
+        burnTtl -= this._time.dt;
         burnTtl = Math.max(0, burnTtl);
         let intPos = Math.floor(pos);
         let flowVel = this._ring.ph.flow[intPos];
         vel -= (vel - flowVel) * flowAffectRatio;
         
-        pos += (vel * this._momento.dt) * timeFactor;
+        pos += (vel * this._time.dt) * timeFactor;
         pos = safemod(pos, this._initialOptions.masterPixelCount);
       
         
@@ -292,7 +292,7 @@ class Renderer extends ParticedRenderer {
   }  
 
   _drawOnFlowParticFats() {
-    let dimFlowRatio = Math.pow(0.5, this._momento.dt);
+    let dimFlowRatio = Math.pow(0.5, this._time.dt);
     for (let i = 0; i < this._initialOptions.particFatsMaxCount; i++) {
       let pos = this._partic.fats[i * 6 + 1];
       let vel = this._partic.fats[i * 6 + 2];
@@ -328,7 +328,7 @@ class Renderer extends ParticedRenderer {
   }  
 
   _drawOnFlowParticHeroes() {
-    let dimFlowRatio = Math.pow(0.5, this._momento.dt);
+    let dimFlowRatio = Math.pow(0.5, this._time.dt);
     for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
       let pos = this._partic.heroes[i * 6 + 1];
       let vel = this._partic.heroes[i * 6 + 2];
@@ -452,7 +452,7 @@ class Renderer extends ParticedRenderer {
   }  
 
   _composeToIngear() {
-    let chillingRatio = Math.pow(0.5, this._momento.dt / 10);
+    let chillingRatio = Math.pow(0.5, this._time.dt / 10);
     let gainingRatio = 1 - chillingRatio;
 
     for (let i = 0; i < this._initialOptions.composePixelCount; i++) {

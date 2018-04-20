@@ -89,21 +89,21 @@ class Dyna extends AbstractRendererModule {
     if (this._input.momentaryB.value) {
       timeFactor = (this._momento.beatStampPos * 1 % 1 < 0.5)?1:-1;
     }
-    let flowAffectRatio = 1 - Math.pow(0.25, this._momento.dt);        
+    let flowAffectRatio = 1 - Math.pow(0.25, this._time.dt);        
     for (let i = 0; i < this._initialOptions.particDynasMaxCount; i++) {
       let ttl = this._partics[i * 8 + 0];
-      if (ttl > this._momento.dt) {
-        ttl -= this._momento.dt;
+      if (ttl > this._time.dt) {
+        ttl -= this._time.dt;
         let pos = this._partics[i * 8 + 1];
         let vel = this._partics[i * 8 + 2];
         let burnTtl = this._partics[i * 8 + 6];
-        burnTtl -= this._momento.dt;
+        burnTtl -= this._time.dt;
         burnTtl = Math.max(0, burnTtl);
         let intPos = Math.floor(pos);
         let flowVel = this._ring.ph.flow[intPos];
         vel -= (vel - flowVel) * flowAffectRatio;
         
-        pos += (vel * this._momento.dt) * timeFactor;
+        pos += (vel * this._time.dt) * timeFactor;
         pos = safemod(pos, this._rendererInitialOptions.masterPixelCount);
       
         

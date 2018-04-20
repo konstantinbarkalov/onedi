@@ -76,7 +76,7 @@ class Renderer extends ParticedRenderer {
   _processLimiter() {
     let outputBufferputCompose = this._ring.outputBuffer.compose;
     this._limiter.bypass = !this._input.switchB.value;  
-    this._limiter.process(outputBufferputCompose, this._momento.dt, outputBufferputCompose, {from: 0, to: 255});
+    this._limiter.process(outputBufferputCompose, this._time.dt, outputBufferputCompose, {from: 0, to: 255});
   }
 
 
@@ -191,7 +191,7 @@ class Renderer extends ParticedRenderer {
   }  
 
   _composeToIngear() {
-    let chillingRatio = Math.pow(0.5, this._momento.dt / 10);
+    let chillingRatio = Math.pow(0.5, this._time.dt / 10);
     let gainingRatio = 1 - chillingRatio;
 
     for (let i = 0; i < this._initialOptions.composePixelCount; i++) {

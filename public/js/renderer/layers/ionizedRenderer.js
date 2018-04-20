@@ -1,8 +1,8 @@
 'use strict';
 // ES6
-import AbstractIterativeRenderer from './abstractIterativeRenderer';
+import TimedRenderer from './timedRenderer';
 
-class IonizedRenderer extends AbstractIterativeRenderer {
+class IonizedRenderer extends TimedRenderer {
   static get _defaultInitialOptions() {
     return Object.assign({}, super._defaultInitialOptions, {
       ionica: null,
