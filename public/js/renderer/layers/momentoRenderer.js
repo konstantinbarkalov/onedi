@@ -90,18 +90,6 @@ class MomentoRenderer extends IonizedRenderer {
     this._momento.squeazeJumpStampPos = safemod(this._momento.squeazeJumpStampPos, 1);
     this._momento.squeazeDiffJumpStampPos = this._momento.squeazeJumpStampPos - this._momento.jumpStampPos;
     this._momento.squeazeDiffJumpStampVel = this._momento.squeazeJumpStampVel - this._momento.jumpStampVel;
-    let skipTime = skipTime;
-    if (!skipTime) {
-      console.log('----');
-      console.log('jumpStampVel', this._momento.jumpStampVel);
-      console.log('squeazeJumpStampVel', this._momento.squeazeJumpStampVel);
-      console.log('squeazeDiffJumpStampVel', this._momento.squeazeDiffJumpStampVel);
-      console.log('jumpStampPos', this._momento.jumpStampPos);
-      skipTime = 1;
-    } else {
-      skipTime++;
-      skipTime %= 6;
-    }
 
     let turnStampConstantVel = (this._input.analogA.value - 0.5) * 2;
     let turnStampConstantSineVel = Math.sin(Date.now()/3000) * 0.1 * 0;

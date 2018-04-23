@@ -22,7 +22,7 @@ class Hero extends AbstractRendererModule {
   }
   static _getCoreconfigInitialOptions(coreconfig, coreconfigKey) {
     return Object.assign({}, super._getCoreconfigInitialOptions(coreconfig, coreconfigKey), {
-      particHeroesMaxCount: coreconfig.renderer.hero.particsMaxCount, 
+      particHeroesMaxCount: coreconfig.renderer.hero.particsMaxCount,
     });
   }
   /* extend */ _construct() {
@@ -31,7 +31,7 @@ class Hero extends AbstractRendererModule {
     this._previousExplodeToParticHeroesloopStamp = 0;
   }
   /* declare */ _onModuleReset() {
-    this._fillParticHeroesRandom();  
+    this._fillParticHeroesRandom();
   }
   /* declare */ _onModuleLive() {
     this._liveParticHeroes();
@@ -40,7 +40,7 @@ class Hero extends AbstractRendererModule {
   }
   /* declare */ _onModuleDraw() {
     this._drawOnMasterParticHeroes();
-    
+
   }
   _fillParticHeroesRandom() {
     for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
@@ -55,13 +55,13 @@ class Hero extends AbstractRendererModule {
   _liveParticHeroesFromClone() {
     for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
       let ttl = (this._momento.loopStampPos) - i / this._initialOptions.particHeroesMaxCount; // shift per beat
-      ttl = safemod(ttl, 1);    
-      let vel = this._momento.turnStampVel * this._rendererInitialOptions.masterPixelCount;      
+      ttl = safemod(ttl, 1);
+      let vel = this._momento.turnStampVel * this._rendererInitialOptions.masterPixelCount;
       let pos = this._momento.turnStampPos * this._rendererInitialOptions.masterPixelCount;
-       
+
       pos += i / this._initialOptions.particHeroesMaxCount * this._rendererInitialOptions.masterPixelCount; // shift per beat
       pos = safemod(pos, this._rendererInitialOptions.masterPixelCount);
-      
+
       this._partics[i * 6 + 0] = ttl;
       this._partics[i * 6 + 1] = pos;
       this._partics[i * 6 + 2] = vel;
@@ -71,22 +71,22 @@ class Hero extends AbstractRendererModule {
     for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
       let ttl = (this._momento.loopStampPos) - i / this._initialOptions.particHeroesMaxCount; // shift per beat
       ttl *= 4;
-      ttl = safemod(ttl, 1);    
-      let vel = this._momento.loopStampVel * this._rendererInitialOptions.masterPixelCount;      
+      ttl = safemod(ttl, 1);
+      let vel = this._momento.loopStampVel * this._rendererInitialOptions.masterPixelCount;
       let pos = this._momento.loopStampPos * this._rendererInitialOptions.masterPixelCount;
-  
+
 
       //let jumpsPerLoop = this._rendererRuntimeOptions.beatsPerLoop / this._rendererRuntimeOptions.beatsPerJump;
-  
-      vel += (0.5 - this._input.analogD.value) * this._momento.squeazeDiffJumpStampVel * this._rendererInitialOptions.masterPixelCount;      
+
+      vel += (0.5 - this._input.analogD.value) * this._momento.squeazeDiffJumpStampVel * this._rendererInitialOptions.masterPixelCount;
       pos += (0.5 - this._input.analogD.value) * this._momento.squeazeDiffJumpStampPos * this._rendererInitialOptions.masterPixelCount;
-      
-      vel += this._momento.turnStampVel * this._rendererInitialOptions.masterPixelCount;      
+
+      vel += this._momento.turnStampVel * this._rendererInitialOptions.masterPixelCount;
       pos += this._momento.turnStampPos * this._rendererInitialOptions.masterPixelCount;
-      
-      
+
+
       pos = safemod(pos, this._rendererInitialOptions.masterPixelCount);
-      
+
       this._partics[i * 6 + 0] = ttl;
       this._partics[i * 6 + 1] = pos;
       this._partics[i * 6 + 2] = vel;
@@ -98,9 +98,9 @@ class Hero extends AbstractRendererModule {
     if (nowHeroInt != prevHeroInt) {
       this._explodeParticHero(nowHeroInt);
     }
-    this._previousExplodeToParticHeroesloopStamp = this._momento.loopStampPos; 
+    this._previousExplodeToParticHeroesloopStamp = this._momento.loopStampPos;
   }
-  
+
   _explodeParticHero(heroIndex) {
     let pos = this._partics[heroIndex * 6 + 1];
     let vel = this._partics[heroIndex * 6 + 2];
@@ -109,8 +109,8 @@ class Hero extends AbstractRendererModule {
     let b = this._partics[heroIndex * 6 + 5];
     console.log('boom lp, heroIndex, rgb', this._momento.loopStampPos, heroIndex, r,g,b);
     //this._renderer.explode([ {pos, vel, rgb: [r, g, b] } ]);
-  }  
-  
+  }
+
 
   _particHeroesBurnRatioToBrightnessFactor(burnRatio) {
     let burnBornInvRatio = 1 / this._runtimeOptions.burnBornMultiplier;
@@ -118,10 +118,10 @@ class Hero extends AbstractRendererModule {
     // TODO put this invRatios (precalced  1 / val) in _internalOptions instead multipliers
     let burnInvRatio = burnBornInvRatio - (burnBornInvRatio - burnDieInvRatio) * burnRatio;
 
-    let burnBornBrightnessFactor = 1 / burnInvRatio; 
-    return burnBornBrightnessFactor;    
+    let burnBornBrightnessFactor = 1 / burnInvRatio;
+    return burnBornBrightnessFactor;
   }
-  
+
   _drawOnMasterParticHeroes() {
     for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
       let ttl = this._partics[i * 6 + 0];
@@ -139,11 +139,11 @@ class Hero extends AbstractRendererModule {
       let brightnessFactor = -baseStrobeFactor + this._runtimeOptions.particHeroesBaseBrightness + this._particHeroesBurnRatioToBrightnessFactor(burnRatio);
       for (let ii = intPosFrom; ii <= intPosTo; ii++) {
         this._ring.g.master[ii * 3 + 0] += r * 3.0 * brightnessFactor;
-        this._ring.g.master[ii * 3 + 1] += g * 3.0; // * brightnessFactor;
-        this._ring.g.master[ii * 3 + 2] += b * 3.0; // * brightnessFactor;  
+        this._ring.g.master[ii * 3 + 1] += g * 3.0 * brightnessFactor;
+        this._ring.g.master[ii * 3 + 2] += b * 3.0 * brightnessFactor;
       }
     }
-  }  
+  }
 
   _drawOnFlowParticHeroes() {
     let affectOnFlowRatio = 1 - Math.pow(0.00001, this._time.dt);
@@ -151,7 +151,7 @@ class Hero extends AbstractRendererModule {
       let pos = this._partics[i * 6 + 1];
       let vel = this._partics[i * 6 + 2];
 
-   
+
       let halfSize = 12; // TODO: masterPixelCount changes agnostic
       let intPosFrom = Math.floor(pos - halfSize);
       let intPosTo = Math.floor(pos + halfSize);
@@ -161,8 +161,8 @@ class Hero extends AbstractRendererModule {
         this._ring.ph.flow[ii] = flow;
       }
     }
-  }  
-  
+  }
+
 
 }
 
