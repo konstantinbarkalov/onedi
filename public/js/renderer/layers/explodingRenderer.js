@@ -17,10 +17,6 @@ class ExplodingRenderer extends MomentoRenderer {
     });
   }
 
-  static get _defaultRuntimeOptions() {
-    return Object.assign({}, super._defaultRuntimeOptions, {
-    });
-  }
 
   _construct() {
     super._construct();
@@ -49,7 +45,9 @@ class ExplodingRenderer extends MomentoRenderer {
   }
 
   /* public */ explode(explodes) {
-    this._pendingExplodes.push(...explodes);
+    if (this._pendingExplodes.length < this._initialOptions.maxExplodes) {
+      this._pendingExplodes.push(...explodes);
+    }
   }
   
   

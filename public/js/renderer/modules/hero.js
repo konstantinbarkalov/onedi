@@ -74,9 +74,12 @@ class Hero extends AbstractRendererModule {
       ttl = safemod(ttl, 1);    
       let vel = this._momento.loopStampVel * this._rendererInitialOptions.masterPixelCount;      
       let pos = this._momento.loopStampPos * this._rendererInitialOptions.masterPixelCount;
-      
-      vel += (0.5 - this._input.analogD.value) * (this._momento.squeazeBeatStampVel - this._momento.beatStampVel) * this._rendererInitialOptions.masterPixelCount;      
-      pos += (0.5 - this._input.analogD.value) * (this._momento.squeazeBeatStampPos - this._momento.beatStampPos) * this._rendererInitialOptions.masterPixelCount;
+  
+
+      //let jumpsPerLoop = this._rendererRuntimeOptions.beatsPerLoop / this._rendererRuntimeOptions.beatsPerJump;
+  
+      vel += (0.5 - this._input.analogD.value) * this._momento.squeazeDiffJumpStampVel * this._rendererInitialOptions.masterPixelCount;      
+      pos += (0.5 - this._input.analogD.value) * this._momento.squeazeDiffJumpStampPos * this._rendererInitialOptions.masterPixelCount;
       
       vel += this._momento.turnStampVel * this._rendererInitialOptions.masterPixelCount;      
       pos += this._momento.turnStampPos * this._rendererInitialOptions.masterPixelCount;

@@ -1,7 +1,7 @@
 'use strict';
 // ES6
 import Limiter from './limiter.js';
-import ParticedRenderer from './layers/particedRenderer';
+import RingedRenderer from './layers/ringedRenderer';
 import Helper from './helper.js';
 
 import Dyna from './modules/dyna.js';
@@ -10,7 +10,7 @@ import Hero from './modules/hero.js';
 import Flow from './modules/flow.js';
 
 let safemod = Helper.safemod;
-class Renderer extends ParticedRenderer {
+class Renderer extends RingedRenderer {
   static get _defaultInitialOptions() {
     return Object.assign({}, super._defaultInitialOptions, {
       particHeroesMaxCount: 1, // RingedRenderer based
@@ -95,8 +95,9 @@ class Renderer extends ParticedRenderer {
     }
 
     for (let i = 0; i < this._initialOptions.composePixelCount; i++) {
-      let masterPos = i * rescaleRate;
- 
+      let posRatio = i / this._initialOptions.composePixelCount;
+      let masterPosShift = 0 * this._initialOptions.masterPixelCount / 32 * Math.sin(Math.PI * 32 * (posRatio - this._momento.turnStampPos));
+      let masterPos = i * rescaleRate + masterPosShift;
       let masterHalfSize = rescaleRate * blurFactor; // dat BLURRNESS
       let intMasterPosFrom = Math.floor(masterPos - masterHalfSize);
       let intMasterPosTo = Math.floor(masterPos + masterHalfSize);
@@ -104,7 +105,7 @@ class Renderer extends ParticedRenderer {
       this._ring.g.compose[i * 3 + 1] = 0;
       this._ring.g.compose[i * 3 + 2] = 0;
       for (let ii = intMasterPosFrom; ii <= intMasterPosTo; ii++) {
-        let iim = (((ii % this._initialOptions.masterPixelCount) + this._initialOptions.masterPixelCount) % this._initialOptions.masterPixelCount);
+        let iim = safemod(ii, this._initialOptions.masterPixelCount);
         this._ring.g.compose[i * 3 + 0] += this._ring.g.master[iim * 3 + 0];
         this._ring.g.compose[i * 3 + 1] += this._ring.g.master[iim * 3 + 1];
         this._ring.g.compose[i * 3 + 2] += this._ring.g.master[iim * 3 + 2];
@@ -199,7 +200,7 @@ class Renderer extends ParticedRenderer {
       this._ring.g.ingear[i * 3 + 1] = 0;
       this._ring.g.ingear[i * 3 + 2] = 0;
     
-      let halfSize = 32;
+      let halfSize = 1 + 32 * this._input.analogI.value;
       let intPosFrom = Math.floor(i - halfSize);
       let intPosTo = Math.floor(i + halfSize);
       for (let ii = intPosFrom; ii <= intPosTo; ii++) {

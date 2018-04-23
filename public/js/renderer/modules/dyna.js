@@ -19,8 +19,10 @@ class Dyna extends AbstractRendererModule {
       particDynasAverageTtl: 10,
       particDynasBurnTtl: 5,
       particDynasBaseBrightness: 0.0,
-      burnBornMultiplier: 10,
-      burnDieMultiplier: 1 / 10,
+      //burnBornMultiplier: 10,
+      burnBornMultiplier: 0.5,
+      //burnDieMultiplier: 1 / 10,
+      burnDieMultiplier: 1 / 300,
     });
   }
   static _getCoreconfigInitialOptions(coreconfig, coreconfigKey) {

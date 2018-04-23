@@ -73,12 +73,12 @@
 
       "analogH": {
         "type": "analog",
-        "label": "sharpen",
+        "label": "sharpen amount",
         "initialValue": 0
       },
-      "analogJ": {
+      "analogI": {
         "type": "analog",
-        "label": "to be used",
+        "label": "sharpen size",
         "initialValue": 0.5
       },
 
