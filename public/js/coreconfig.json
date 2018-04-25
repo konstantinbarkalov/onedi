@@ -1,10 +1,10 @@
-{ 
+{
   "renderer": {
     "dyna": {
       "particsMaxCount": 2048
     },
     "fat": {
-      "particsMaxCount": 4
+      "particsMaxCount": 8
     },
     "hero": {
       "particsMaxCount": 1
@@ -14,7 +14,7 @@
     "master": {
       "metricSize": 5,
       "pixelCount": 960
-    },  
+    },
     "composes": {
       "ledlineA": {
         "pixelCount": 150,
@@ -35,13 +35,13 @@
         "label": "global rotation",
         "initialValue": 0.5
       },
-    
+
       "analogC": {
         "type": "analog",
         "label": "global punchness",
         "initialValue": 0.5
       },
-      
+
       "analogD": {
         "type": "analog",
         "label": "hero punchness",

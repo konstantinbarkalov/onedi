@@ -107,7 +107,7 @@ class Fat extends AbstractRendererModule {
       let b = this._partics[i * 6 + 5];
 
       let halfSize = 6; // TODO: masterPixelCount changes agnostic
-      halfSize *= ttl * ttl * 3;
+      halfSize *= ttl * ttl * Math.SQRT2;
       let intPosFrom = Math.floor(pos - halfSize);
       let intPosTo = Math.floor(pos + halfSize);
       let baseStrobeFactor = 0;

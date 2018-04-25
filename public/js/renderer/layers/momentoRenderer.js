@@ -19,7 +19,7 @@ class MomentoRenderer extends IonizedRenderer {
 
   /* extend */ static get _defaultRuntimeOptions() {
     return Object.assign({}, super._defaultRuntimeOptions, {
-      beatsPerLoop: 8,
+      beatsPerLoop: 16,
       beatsPerJump: 2,
       beatsPerHit: 4,
       bpm: 175,

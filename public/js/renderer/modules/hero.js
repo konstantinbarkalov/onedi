@@ -52,25 +52,9 @@ class Hero extends AbstractRendererModule {
       this._partics[i * 6 + 5] = Math.random();
     }
   }
-  _liveParticHeroesFromClone() {
-    for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
-      let ttl = (this._momento.loopStampPos) - i / this._initialOptions.particHeroesMaxCount; // shift per beat
-      ttl = safemod(ttl, 1);
-      let vel = this._momento.turnStampVel * this._rendererInitialOptions.masterPixelCount;
-      let pos = this._momento.turnStampPos * this._rendererInitialOptions.masterPixelCount;
-
-      pos += i / this._initialOptions.particHeroesMaxCount * this._rendererInitialOptions.masterPixelCount; // shift per beat
-      pos = safemod(pos, this._rendererInitialOptions.masterPixelCount);
-
-      this._partics[i * 6 + 0] = ttl;
-      this._partics[i * 6 + 1] = pos;
-      this._partics[i * 6 + 2] = vel;
-    }
-  }
   _liveParticHeroes() {
     for (let i = 0; i < this._initialOptions.particHeroesMaxCount; i++) {
-      let ttl = (this._momento.loopStampPos) - i / this._initialOptions.particHeroesMaxCount; // shift per beat
-      ttl *= 4;
+      let ttl = (this._momento.jumpStampPos) - i / this._initialOptions.particHeroesMaxCount; // shift per beat
       ttl = safemod(ttl, 1);
       let vel = this._momento.loopStampVel * this._rendererInitialOptions.masterPixelCount;
       let pos = this._momento.loopStampPos * this._rendererInitialOptions.masterPixelCount;
@@ -129,18 +113,33 @@ class Hero extends AbstractRendererModule {
       let r = this._partics[i * 6 + 3];
       let g = this._partics[i * 6 + 4];
       let b = this._partics[i * 6 + 5];
-
-      let halfSize = 12; // TODO: masterPixelCount changes agnostic
-      halfSize *= ttl * ttl * 3;
-      let intPosFrom = Math.floor(pos - halfSize);
-      let intPosTo = Math.floor(pos + halfSize);
-      let baseStrobeFactor = 0;
-      let burnRatio = 0.5; // TODO loopStamp it
-      let brightnessFactor = -baseStrobeFactor + this._runtimeOptions.particHeroesBaseBrightness + this._particHeroesBurnRatioToBrightnessFactor(burnRatio);
-      for (let ii = intPosFrom; ii <= intPosTo; ii++) {
-        this._ring.g.master[ii * 3 + 0] += r * 3.0 * brightnessFactor;
-        this._ring.g.master[ii * 3 + 1] += g * 3.0 * brightnessFactor;
-        this._ring.g.master[ii * 3 + 2] += b * 3.0 * brightnessFactor;
+      {
+        let halfSize = 24; // TODO: masterPixelCount changes agnostic
+        halfSize *= ttl * ttl * Math.SQRT2;
+        let intPosFrom = Math.floor(pos - halfSize);
+        let intPosTo = Math.floor(pos + halfSize);
+        let baseStrobeFactor = 0;
+        let burnRatio = 0.5; // TODO loopStamp it
+        let brightnessFactor = -baseStrobeFactor + this._runtimeOptions.particHeroesBaseBrightness + this._particHeroesBurnRatioToBrightnessFactor(burnRatio);
+        for (let ii = intPosFrom; ii <= intPosTo; ii++) {
+          this._ring.g.master[ii * 3 + 0] -= 0.5;
+          this._ring.g.master[ii * 3 + 1] -= 0.5;
+          this._ring.g.master[ii * 3 + 2] -= 0.5;
+        }
+      }
+      {
+        let halfSize = 6; // TODO: masterPixelCount changes agnostic
+        halfSize *= ttl * ttl * Math.SQRT2;
+        let intPosFrom = Math.floor(pos - halfSize);
+        let intPosTo = Math.floor(pos + halfSize);
+        let baseStrobeFactor = 0;
+        let burnRatio = 0.5; // TODO loopStamp it
+        let brightnessFactor = -baseStrobeFactor + this._runtimeOptions.particHeroesBaseBrightness + this._particHeroesBurnRatioToBrightnessFactor(burnRatio);
+        for (let ii = intPosFrom; ii <= intPosTo; ii++) {
+          this._ring.g.master[ii * 3 + 0] += r * 3.0 * brightnessFactor;
+          this._ring.g.master[ii * 3 + 1] += g * 3.0 * brightnessFactor;
+          this._ring.g.master[ii * 3 + 2] += b * 3.0 * brightnessFactor;
+        }
       }
     }
   }

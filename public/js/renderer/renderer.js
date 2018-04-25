@@ -21,7 +21,7 @@ class Renderer extends RingedRenderer {
       ],
     });
   }
-  
+
   static _getCoreconfigInitialOptions(coreconfig, coreconfigKey) {
     return Object.assign({}, super._getCoreconfigInitialOptions(coreconfig, coreconfigKey), {
       masterPixelCount: coreconfig.render.master.pixelCount,  // RingedRenderer based
@@ -31,10 +31,10 @@ class Renderer extends RingedRenderer {
 
   _construct() {
     super._construct();
-    
+
     //TODO limiter as a module
     this._limiter = new Limiter({coreconfigKey: this._runtimeOptions.coreconfigKey});
-    
+
     this.modules = {
       dyna: new Dyna({renderer: this, coreconfigKey: this._initialOptions.coreconfigKey}),
       fat: new Fat({renderer: this, coreconfigKey: this._initialOptions.coreconfigKey}),
@@ -56,7 +56,7 @@ class Renderer extends RingedRenderer {
 
     this._masterToCompose();
     //this._fillComposeDebug();
-    this._drawOnComposeDigitalStrobe();  
+    this._drawOnComposeDigitalStrobe();
     this._composeToIngear();
     this._processComposeWithIngear();
   }
@@ -70,12 +70,12 @@ class Renderer extends RingedRenderer {
   _finalUpdateOutputBuffer() {
     this._updateOutputBuffer();
     this._processLimiter();
-    this._emitOutputBuffer();    
+    this._emitOutputBuffer();
   }
 
   _processLimiter() {
     let outputBufferputCompose = this._ring.outputBuffer.compose;
-    this._limiter.bypass = !this._input.switchB.value;  
+    this._limiter.bypass = !this._input.switchB.value;
     this._limiter.process(outputBufferputCompose, this._time.dt, outputBufferputCompose, {from: 0, to: 255});
   }
 
@@ -83,7 +83,7 @@ class Renderer extends RingedRenderer {
 
   _masterToCompose() {
     let rescaleRate = this._initialOptions.masterPixelCount / this._initialOptions.composePixelCount;
-    
+
     let blurFactor = 1;
     blurFactor += 12 * this._input.analogG.value;
     blurFactor += 12 * this._input.momentaryA.value;
@@ -96,7 +96,7 @@ class Renderer extends RingedRenderer {
 
     for (let i = 0; i < this._initialOptions.composePixelCount; i++) {
       let posRatio = i / this._initialOptions.composePixelCount;
-      let masterPosShift = 0 * this._initialOptions.masterPixelCount / 32 * Math.sin(Math.PI * 32 * (posRatio - this._momento.turnStampPos));
+      let masterPosShift = 0 * this._initialOptions.masterPixelCount / 16 * Math.sin(Math.PI * 16 * (posRatio - this._momento.loopStampPos));
       let masterPos = i * rescaleRate + masterPosShift;
       let masterHalfSize = rescaleRate * blurFactor; // dat BLURRNESS
       let intMasterPosFrom = Math.floor(masterPos - masterHalfSize);
@@ -113,43 +113,43 @@ class Renderer extends RingedRenderer {
       this._ring.g.compose[i * 3 + 0] /= masterHalfSize * 2;
       this._ring.g.compose[i * 3 + 1] /= masterHalfSize * 2;
       this._ring.g.compose[i * 3 + 2] /= masterHalfSize * 2;
-      
+
       //this._ring.g.compose[i * 3 + 0] = Math.pow(10 * this._ring.g.compose[i * 3 + 0], 10);
       //this._ring.g.compose[i * 3 + 1] = Math.pow(10 * this._ring.g.compose[i * 3 + 1], 10);
-      //this._ring.g.compose[i * 3 + 2] = Math.pow(10 * this._ring.g.compose[i * 3 + 2], 10); 
-      
+      //this._ring.g.compose[i * 3 + 2] = Math.pow(10 * this._ring.g.compose[i * 3 + 2], 10);
+
       //this._ring.g.compose[i * 3 + 0] = Math.pow(this._ring.g.compose[i * 3 + 0], 3);
       //this._ring.g.compose[i * 3 + 1] = Math.pow(this._ring.g.compose[i * 3 + 1], 3);
-      //this._ring.g.compose[i * 3 + 2] = Math.pow(this._ring.g.compose[i * 3 + 2], 3); 
-      
+      //this._ring.g.compose[i * 3 + 2] = Math.pow(this._ring.g.compose[i * 3 + 2], 3);
+
 
 
       //this._ring.g.compose[i * 3 + 0] = Math.log(1 + 100 * this._ring.g.compose[i * 3 + 0]) / 5;
       //this._ring.g.compose[i * 3 + 1] = Math.log(1 + 100 * this._ring.g.compose[i * 3 + 1]) / 5;
       //this._ring.g.compose[i * 3 + 2] = Math.log(1 + 100 * this._ring.g.compose[i * 3 + 2]) / 5;
 
-     
+
       let ratio = this._input.analogB.value;
       let exp = (0.5 - ratio) * 2;
       if (this._input.switchC.value) {
       let gamma = Math.pow(Math.E, exp);
         this._ring.g.compose[i * 3 + 0] = Math.pow(Math.max(0, this._ring.g.compose[i * 3 + 0]), gamma);
         this._ring.g.compose[i * 3 + 1] = Math.pow(Math.max(0, this._ring.g.compose[i * 3 + 1]), gamma);
-        this._ring.g.compose[i * 3 + 2] = Math.pow(Math.max(0, this._ring.g.compose[i * 3 + 2]), gamma); 
+        this._ring.g.compose[i * 3 + 2] = Math.pow(Math.max(0, this._ring.g.compose[i * 3 + 2]), gamma);
       }
-      ///// 
+      /////
 
-      
+
       let med = this._ring.g.compose[i * 3 + 0] + this._ring.g.compose[i * 3 + 1] + this._ring.g.compose[i * 3 + 2];
       med /= 3;
       this._ring.g.compose[i * 3 + 0] -= med;
       this._ring.g.compose[i * 3 + 1] -= med;
       this._ring.g.compose[i * 3 + 2] -= med;
-    
+
       this._ring.g.compose[i * 3 + 0] *= 1 + 2 * ratio;
       this._ring.g.compose[i * 3 + 1] *= 1 + 2 * ratio;
       this._ring.g.compose[i * 3 + 2] *= 1 + 2 * ratio;
-    
+
       this._ring.g.compose[i * 3 + 0] += med / (1 + 1 * ratio);
       this._ring.g.compose[i * 3 + 1] += med / (1 + 1 * ratio);
       this._ring.g.compose[i * 3 + 2] += med / (1 + 1 * ratio);
@@ -157,12 +157,12 @@ class Renderer extends RingedRenderer {
       if (this._input.switchD.value) {
         this._ring.g.compose[i * 3 + 0] -= 0.2;
         this._ring.g.compose[i * 3 + 1] -= 0.2;
-        this._ring.g.compose[i * 3 + 2] -= 0.2; 
+        this._ring.g.compose[i * 3 + 2] -= 0.2;
         this._ring.g.compose[i * 3 + 0] *= 2;
         this._ring.g.compose[i * 3 + 1] *= 2;
-        this._ring.g.compose[i * 3 + 2] *= 2; 
+        this._ring.g.compose[i * 3 + 2] *= 2;
       }
-    
+
 
     }
   }
@@ -174,22 +174,22 @@ class Renderer extends RingedRenderer {
       let strobeLoopStampPos = (this._momento.loopStampPos * 4) % 1;
       let strobingPartId = Math.floor(strobeLoopStampPos * partsCount);
       for (let i = 0; i < this._initialOptions.composePixelCount; i++) {
-        let partId = Math.floor(i / this._initialOptions.composePixelCount * partsCount); 
+        let partId = Math.floor(i / this._initialOptions.composePixelCount * partsCount);
         if (partId === strobingPartId) {
           // glow
           this._ring.g.compose[i * 3 + 0] += strobeValue * 2;
           this._ring.g.compose[i * 3 + 1] += strobeValue * 2;
-          this._ring.g.compose[i * 3 + 2] += strobeValue * 2;  
+          this._ring.g.compose[i * 3 + 2] += strobeValue * 2;
         } else {
           // dim
           this._ring.g.compose[i * 3 + 0] += strobeValue * 2 - 2;
           this._ring.g.compose[i * 3 + 1] += strobeValue * 2 - 2;
-          this._ring.g.compose[i * 3 + 2] += strobeValue * 2 - 2;  
-            
+          this._ring.g.compose[i * 3 + 2] += strobeValue * 2 - 2;
+
         }
       }
     }
-  }  
+  }
 
   _composeToIngear() {
     let chillingRatio = Math.pow(0.5, this._time.dt / 10);
@@ -199,7 +199,7 @@ class Renderer extends RingedRenderer {
       this._ring.g.ingear[i * 3 + 0] = 0;
       this._ring.g.ingear[i * 3 + 1] = 0;
       this._ring.g.ingear[i * 3 + 2] = 0;
-    
+
       let halfSize = 1 + 32 * this._input.analogI.value;
       let intPosFrom = Math.floor(i - halfSize);
       let intPosTo = Math.floor(i + halfSize);
@@ -207,7 +207,7 @@ class Renderer extends RingedRenderer {
         let iim = (((ii % this._initialOptions.composePixelCount) + this._initialOptions.composePixelCount) % this._initialOptions.composePixelCount);
         this._ring.g.ingear[i * 3 + 0] += this._ring.g.compose[iim * 3 + 0];
         this._ring.g.ingear[i * 3 + 1] += this._ring.g.compose[iim * 3 + 1];
-        this._ring.g.ingear[i * 3 + 2] += this._ring.g.compose[iim * 3 + 2];  
+        this._ring.g.ingear[i * 3 + 2] += this._ring.g.compose[iim * 3 + 2];
       }
       this._ring.g.ingear[i * 3 + 0] /= halfSize * 2;
       this._ring.g.ingear[i * 3 + 1] /= halfSize * 2;
@@ -225,7 +225,7 @@ class Renderer extends RingedRenderer {
       this._ring.g.compose[i * 3 + 2] -= this._ring.g.ingear[i * 3 + 2] * sharpenRatio;
       this._ring.g.compose[i * 3 + 0] *= 1 + 1 * sharpenRatio;
       this._ring.g.compose[i * 3 + 1] *= 1 + 1 * sharpenRatio;
-      this._ring.g.compose[i * 3 + 2] *= 1 + 1 * sharpenRatio;  
+      this._ring.g.compose[i * 3 + 2] *= 1 + 1 * sharpenRatio;
     }
 
   }
@@ -241,20 +241,20 @@ class Renderer extends RingedRenderer {
       this._ring.outputBuffer.compose[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 1] * 256)));
       this._ring.outputBuffer.compose[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._ring.g.compose[i * 3 + 2] * 256)));
     }
-    
+
     for (let i = 0; i < this._initialOptions.masterPixelCount; i++) {
       this._ring.outputBuffer.flow[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(         this._ring.ph.flow[i] / 1000 * 256)));
       this._ring.outputBuffer.flow[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(     1 - this._ring.ph.flow[i] / 1000  * 256)));
       this._ring.outputBuffer.flow[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(Math.abs(this._ring.ph.flow[i]) / 1000  * 256)));
     }
 
-    for (let i = 0; i < this._initialOptions.composePixelCount; i++) { 
+    for (let i = 0; i < this._initialOptions.composePixelCount; i++) {
       this._ring.outputBuffer.ingear[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._ring.g.ingear[i * 3 + 0] * 256)));
       this._ring.outputBuffer.ingear[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._ring.g.ingear[i * 3 + 1] * 256)));
       this._ring.outputBuffer.ingear[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._ring.g.ingear[i * 3 + 2] * 256)));
     }
-    
-    for (let i = 0; i < this._initialOptions.composePixelCount; i++) { 
+
+    for (let i = 0; i < this._initialOptions.composePixelCount; i++) {
       this._ring.outputBuffer.heat[i * 3 + 0] = Math.min(255, Math.max(0, Math.floor(this._limiter._heatRing[i * 3 + 0] * 256)));
       this._ring.outputBuffer.heat[i * 3 + 1] = Math.min(255, Math.max(0, Math.floor(this._limiter._heatRing[i * 3 + 1] * 256)));
       this._ring.outputBuffer.heat[i * 3 + 2] = Math.min(255, Math.max(0, Math.floor(this._limiter._heatRing[i * 3 + 2] * 256)));

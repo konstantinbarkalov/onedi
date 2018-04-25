@@ -5,6 +5,8 @@ const composePixelCount = coreconfig.render.composes.ledlineA.pixelCount;
 const flowPixelCount = masterPixelCount;
 const ingearPixelCount = composePixelCount;
 const heatPixelCount = composePixelCount;
+const recorderPixelCount = composePixelCount;
+const recorderLinesCount = 600;
 
 let config = {
   runStampsCount: 100,
@@ -13,30 +15,34 @@ let config = {
 function LedlineSimulator({databus, $container}) {
   const that = this;
 
-  let $masterCanvas = $('<canvas></canvas>').addClass('ledline-simulator-master-canvas'); 
+  let $masterCanvas = $('<canvas></canvas>').addClass('ledline-simulator-master-canvas');
   $container.append($masterCanvas);
-  let $composeCanvas = $('<canvas></canvas>').addClass('ledline-simulator-compose-canvas'); 
+  let $composeCanvas = $('<canvas></canvas>').addClass('ledline-simulator-compose-canvas');
   $container.append($composeCanvas);
-  let $flowCanvas = $('<canvas></canvas>').addClass('ledline-simulator-flow-canvas'); 
+  let $flowCanvas = $('<canvas></canvas>').addClass('ledline-simulator-flow-canvas');
   $container.append($flowCanvas);
-  let $ingearCanvas = $('<canvas></canvas>').addClass('ledline-simulator-ingear-canvas'); 
+  let $ingearCanvas = $('<canvas></canvas>').addClass('ledline-simulator-ingear-canvas');
   $container.append($ingearCanvas);
-  let $heatCanvas = $('<canvas></canvas>').addClass('ledline-simulator-heat-canvas'); 
+  let $heatCanvas = $('<canvas></canvas>').addClass('ledline-simulator-heat-canvas');
   $container.append($heatCanvas);
   let $stat = $('<div></div>').addClass('ledline-simulator-stat');
   $container.append($stat);
-  
+  let $recorderCanvas = $('<canvas></canvas>').addClass('ledline-simulator-recorder-canvas');
+  $container.append($recorderCanvas);
+
+
   let $$debug = $masterCanvas.add(
     //$composeCanvas,
     $flowCanvas).add(
     $ingearCanvas).add(
     $heatCanvas).add(
-    $stat);
+    $stat).add(
+    $recorderCanvas);
 
   let $debugSwitch = $('<input type="checkbox"></input>').addClass('ledline-simulator-debug-switch');
   $container.append($debugSwitch);
-  
-  
+
+
   that._masterCanvasScaledWidth = 0;
   that._masterCanvasScaledHeight = 0;
   that._masterCanvas = null;
@@ -53,31 +59,43 @@ function LedlineSimulator({databus, $container}) {
   that._ingearCanvasScaledHeight = 0;
   that._ingearCanvas = null;
   that._ingearCtx = null;
-  
+  that._heatCanvasScaledWidth = 0;
+  that._heatCanvasScaledHeight = 0;
+  that._heatCanvas = null;
+  that._heatCtx = null;
+  that._recorderCanvasScaledWidth = 0;
+  that._recorderCanvasScaledHeight = 0;
+  that._recorderCanvas = null;
+  that._recorderCtx = null;
+
   function init() {
     databus.on('rendered', (datum) => {
       onRendered(datum);
     });
     that._masterCanvas = $masterCanvas[0];
-    that._masterCtx = that._masterCanvas.getContext('2d');  
+    that._masterCtx = that._masterCanvas.getContext('2d');
     that._masterCanvas.width = masterPixelCount;
     that._masterCanvas.height = 1;
     that._composeCanvas = $composeCanvas[0];
-    that._composeCtx = that._composeCanvas.getContext('2d');  
+    that._composeCtx = that._composeCanvas.getContext('2d');
     that._composeCanvas.width = composePixelCount;
     that._composeCanvas.height = 1;
     that._flowCanvas = $flowCanvas[0];
-    that._flowCtx = that._flowCanvas.getContext('2d');  
+    that._flowCtx = that._flowCanvas.getContext('2d');
     that._flowCanvas.width = flowPixelCount;
     that._flowCanvas.height = 1;
     that._ingearCanvas = $ingearCanvas[0];
-    that._ingearCtx = that._ingearCanvas.getContext('2d');  
+    that._ingearCtx = that._ingearCanvas.getContext('2d');
     that._ingearCanvas.width = ingearPixelCount;
     that._ingearCanvas.height = 1;
     that._heatCanvas = $heatCanvas[0];
-    that._heatCtx = that._heatCanvas.getContext('2d');  
+    that._heatCtx = that._heatCanvas.getContext('2d');
     that._heatCanvas.width = heatPixelCount;
     that._heatCanvas.height = 1;
+    that._recorderCanvas = $recorderCanvas[0];
+    that._recorderCtx = that._recorderCanvas.getContext('2d');
+    that._recorderCanvas.width = recorderPixelCount;
+    that._recorderCanvas.height = recorderLinesCount;
 
     $(window).on('resize', () => {
       updateCanvasScaledSize();
@@ -157,14 +175,19 @@ function LedlineSimulator({databus, $container}) {
     that._ingearCanvasScaledHeight = $ingearCanvas.height();
     that._heatCanvasScaledWidth = $heatCanvas.width();
     that._heatCanvasScaledHeight = $heatCanvas.height();
+    that._recorderCanvasScaledWidth = $recorderCanvas.width();
+    that._recorderCanvasScaledHeight = $recorderCanvas.height();
   }
-
+  let lastRecorderedY = 0;
   function onRendered({master, compose, flow, ingear, heat}) {
     updateGenericCanvas(that._masterCtx, masterPixelCount, master);
     updateGenericCanvas(that._composeCtx, composePixelCount, compose);
     updateGenericCanvas(that._flowCtx, flowPixelCount, flow);
     updateGenericCanvas(that._ingearCtx, ingearPixelCount, ingear);
     updateGenericCanvas(that._heatCtx, heatPixelCount, heat);
+    updateGenericCanvas(that._recorderCtx, recorderPixelCount, compose, lastRecorderedY);
+    lastRecorderedY++;
+    lastRecorderedY %= recorderLinesCount;
     stat({master, compose, flow, ingear, heat});
   }
   function updateStat() {
@@ -179,17 +202,17 @@ function LedlineSimulator({databus, $container}) {
 
     $stat.html(html);
   }
-  
-  function updateGenericCanvas(ctx, pixelCount, renderedData) {
+
+  function updateGenericCanvas(ctx, pixelCount, renderedData, y = 0) {
     let imd = ctx.createImageData(pixelCount, 1);
-    let d  = imd.data;                       
+    let d  = imd.data;
     for (let i = 0; i < pixelCount; i++) {
       d[i * 4 + 0] = renderedData[i * 3 + 0];
       d[i * 4 + 1] = renderedData[i * 3 + 1];
       d[i * 4 + 2] = renderedData[i * 3 + 2];
       d[i * 4 + 3] = 255; //alpha
     }
-    ctx.putImageData(imd, 0, 0 );  
+    ctx.putImageData(imd, 0, y );
   }
 init();
 }
